@@ -36,7 +36,7 @@ create table snack_nutrition
     constraint uk_snack_name
         unique (snack_name) comment '零食名称唯一索引，避免重复录入同款零食'
 )
-    comment '零食营养数据表' charset = utf8mb3;
+    comment '零食营养数据表' collate = utf8mb3_general_ci;
 
 create index idx_update_time
     on snack_nutrition (update_time)
@@ -110,10 +110,11 @@ create table ai_message
     user_id         bigint                             not null comment '所属用户ID（冗余）',
     content         text                               not null comment '消息内容',
     sequence        int                                not null comment '对话内消息序号',
-    reply_status    tinyint  default 0                 null comment 'AI回复状态：0-未回复，1-已回复，2-失败',
+    function_type   tinyint  default 0                 null comment '功能选择：0-AI对话，1-三餐分析。2-零食分析，3-报告识别',
     create_time     datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     delete_flag     tinyint  default 0                 not null comment '软删除：0-未删，1-已删',
     role            varchar(20)                        not null comment '角色：user/assistant/system',
+    img_url         varchar(50)                        null comment '图片地址',
     constraint fk_message_conversation
         foreign key (conversation_id) references ai_conversation (id),
     constraint fk_message_user
@@ -189,7 +190,7 @@ create table user_snack_record
     create_time       datetime     default CURRENT_TIMESTAMP not null comment '记录创建时间，自动生成',
     update_time       datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '记录更新时间，修改自动刷新'
 )
-    comment '用户零食食用记录表' charset = utf8mb3;
+    comment '用户零食食用记录表' collate = utf8mb3_general_ci;
 
 create index idx_snack_id
     on user_snack_record (snack_id)
