@@ -84,7 +84,8 @@ public class UserController {
         Long userid = settingRequest.getUserid();
         String sick=settingRequest.getSick();
         String taboo=settingRequest.getTaboo();
-        String img=settingRequest.getImg();
+        String img=settingRequest.getAvatar();
+
 
         Map<String, Object>map=userService.setting(username,userid,sick,taboo,img);
         return Result.success(map);

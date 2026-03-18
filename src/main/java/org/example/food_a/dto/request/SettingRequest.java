@@ -10,7 +10,7 @@ public class SettingRequest {
     private Long userid;
     private String sick;
     private String taboo;
-    private String img;
+    private String avatar;
     private String old_password;
     private String new_password;
 }

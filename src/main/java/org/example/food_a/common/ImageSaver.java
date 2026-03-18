@@ -8,6 +8,9 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 public class ImageSaver {
 
@@ -21,10 +24,16 @@ public class ImageSaver {
      * @throws IOException 如果文件写入失败或目录创建失败
      */
     public static String saveBase64AsJpg(String base64Image, Long userId, String targetDir) throws IOException {
+
+        if (base64Image == null || base64Image.trim().isEmpty()) {
+            // 如果是空，直接返回，不保存图片，或者根据业务需求处理
+            return "src/main/resources/avatar/empty.jpg";
+        }
+
         // 2. 解码 Base64 为字节数组
         byte[] imageBytes;
         try {
-            imageBytes = Base64.getDecoder().decode(base64Image.trim());
+            imageBytes = Base64.getDecoder().decode(removeBase64Header(base64Image).trim());
         } catch (IllegalArgumentException e) {
             throw new IOException("图片Base64 解码失败，请检查输入字符串格式", e);
         }
@@ -61,7 +70,7 @@ public class ImageSaver {
         // 2. 解码 Base64 为字节数组
         byte[] imageBytes;
         try {
-            imageBytes = Base64.getDecoder().decode(base64Image.trim());
+            imageBytes = Base64.getDecoder().decode(removeBase64Header(base64Image).trim());
         } catch (IllegalArgumentException e) {
             throw new IOException("图片Base64 解码失败，请检查输入字符串格式", e);
         }
@@ -110,7 +119,7 @@ public class ImageSaver {
     public static String saveBase64ForMeal(String base64Image, Long userId, Byte mealType, String targetDir, String mimeType) throws IOException {
         byte[] imageBytes;
         try {
-            imageBytes = Base64.getDecoder().decode(base64Image.trim());
+            imageBytes = Base64.getDecoder().decode(removeBase64Header(base64Image).trim());
         } catch (IllegalArgumentException e) {
             throw new IOException("图片Base64 解码失败，请检查输入字符串格式", e);
         }
@@ -133,5 +142,38 @@ public class ImageSaver {
         Path currentDir = Paths.get("").toAbsolutePath();
         Path relativePath = currentDir.relativize(filePath.toAbsolutePath());
         return relativePath.toString();
+    }
+
+    /**
+     * 去除 Base64 图片字符串的数据头，返回纯 Base64 内容。
+     * 如果输入不包含数据头，则原样返回。
+     * 如果输入为 null 或空，则返回 null 或空字符串。
+     *
+     * @param base64WithHeader 包含可能数据头的 Base64 字符串
+     * @return 纯正的 Base64 字符串
+     */
+    public static String removeBase64Header(String base64WithHeader) {
+        if (base64WithHeader == null || base64WithHeader.isEmpty()) {
+            return base64WithHeader;
+        }
+
+        // 正则解释：
+        // ^data:                以 "data:" 开头
+        // image/\\w+;           匹配 "image/" 后跟任意单词字符(如 png, jpeg)，然后是分号
+        // base64,               匹配固定的 "base64,"
+        // 整个模式是大小写不敏感的
+        String regex = "^data:image/\\w+;base64,";
+
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(base64WithHeader);
+
+        if (matcher.find()) {
+            // 如果匹配到了头，则截取掉匹配到的部分
+            return base64WithHeader.substring(matcher.end());
+        }
+
+        // 如果没有匹配到头（可能是纯 Base64 或者其他格式），直接返回原字符串
+        // 也可以根据业务需求选择抛出异常
+        return base64WithHeader;
     }
 }

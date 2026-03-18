@@ -10,6 +10,7 @@ import org.example.food_a.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import static org.example.food_a.common.StringSplitter.splitString;
 import static org.example.food_a.common.ImageSaver.saveBase64AsJpg;
+import static org.example.food_a.common.ImageSaver.removeBase64Header;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -59,6 +60,7 @@ public class UserService {
     }
 
     public Map<String, Object>  setting(String username,Long userid,String sick,String taboo,String img) {
+
         Map<String, Object> map = new HashMap<>();
         User settingUser = userRepository.findById(userid)
                 .orElseThrow(() -> new RuntimeException("未找到用户"));
@@ -128,7 +130,7 @@ public class UserService {
 
         String avatar;
         try {
-            avatar = ImageSaver.saveBase64AsJpg(img, userid, "src/main/resources/avatar");
+            avatar = ImageSaver.saveBase64AsJpg(removeBase64Header(img), userid, "src/main/resources/avatar");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -140,7 +142,8 @@ public class UserService {
         map.put("img", img);
         map.put("sick",sick);
         map.put("taboo",taboo);
-        
+
+
         return map;
         
     }
