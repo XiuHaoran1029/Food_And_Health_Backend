@@ -55,7 +55,6 @@ public class SnackAnalysis extends AiChat{
             "# User Input\n" +
             "{{user_input_string}}";
 
-    @Transactional
     public String analyzeSnack(Long userId, String snackName, String count, String remark, String role){
         Integer roleValue = convertRoleToValue(role);
         Double countValue = parseCount(count);
@@ -76,7 +75,7 @@ public class SnackAnalysis extends AiChat{
         String aiSuggestion;
         try {
             aiSuggestion = getAiResponseWithCustomSystem(
-                SYSTEM_PROMPT, prompt, null, null, new ArrayList<>()
+                SYSTEM_PROMPT, prompt, null, new ArrayList<>()
             );
         } catch (Exception e) {
             aiSuggestion = "AI分析暂时不可用：" + e.getMessage();

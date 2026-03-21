@@ -32,6 +32,13 @@ public class AiMessageService {
      */
     @Transactional
     public AiMessage sendMessage(Long conversationId, Long userId, String role, String content,String function_type,String imgBase64,String mimeType) throws Exception {
+        System.out.print("userId:"+userId);
+        System.out.print("conversationId:"+conversationId);
+        System.out.print("content:"+content);
+        System.out.print("role:"+role);
+        System.out.print("function_type:"+function_type);
+        System.out.print("img:"+imgBase64.length());
+
         // 校验对话
         AiConversation conversation = conversationService.getConversationById(conversationId, userId);
         if (conversation == null) {
@@ -57,7 +64,7 @@ public class AiMessageService {
 // 第二步：如果有图片内容，则处理图片
         if (imgBase64 != null && !imgBase64.isEmpty()) {
             // 使用 messageId 替换 userId
-            String imgUrl = saveBase64(imgBase64, messageId, "src/main/resources/img", mimeType);
+            String imgUrl = saveBase64(imgBase64, messageId, "src/main/resources/img");
 
             // 更新消息对象的图片 URL
             userMessage.setImgUrl(imgUrl);
@@ -78,14 +85,14 @@ public class AiMessageService {
                 // 调用AI获取回复（传递上下文）
                 aiContent = aiChat.getAiResponseWithContext(content, historyMessages);
             }else {
-                aiContent = aiChat.getAiResponseWithContext(content,imgBase64,mimeType, historyMessages);
+                aiContent = aiChat.getAiResponseWithContext(content,imgBase64, historyMessages);
             }
         }else if(Objects.equals(function_type, "food_analysis")){
-            aiContent = foodAnalysis.analyzeMeal(userId,role,content,imgBase64,mimeType);
+            aiContent = foodAnalysis.analyzeMeal(userId,role,content,imgBase64);
         }else if(Objects.equals(function_type, "snack_analysis")){
             aiContent = snackAnalysis.analyzeSnack(userId, content, "100", "", role);
         }else if(Objects.equals(function_type, "report_analysis")){
-            aiContent = reportAnalysis.analyzeReport(imgBase64,mimeType);
+            aiContent = reportAnalysis.analyzeReport(imgBase64);
         }
 
 

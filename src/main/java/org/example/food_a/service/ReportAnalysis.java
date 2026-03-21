@@ -67,8 +67,7 @@ public class ReportAnalysis extends AiChat{
             "# User Input\n" +
             "[用户上传的体检报告图片]";
 
-    @Transactional
-    public String analyzeReport(String base64Image, String mimeType) throws Exception {
-        return getAiResponseWithContext(null,base64Image,mimeType,new ArrayList<>());
+    public String analyzeReport(String base64Image) throws Exception {
+        return getAiResponseWithContext(null,base64Image,new ArrayList<>());
     }
 }

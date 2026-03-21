@@ -1,10 +1,7 @@
 package org.example.food_a.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
@@ -64,6 +61,7 @@ public class AiMessage {
      * 功能种类枚举
      * ⚠️ 警告：使用 EnumType.ORDINAL 时，绝对不要改变以下枚举的顺序！
      */
+    @Getter
     public enum FunctionType {
         AI_CHAT(0, "AI对话"),
         MEAL_ANALYSIS(1, "三餐分析"),
@@ -76,14 +74,6 @@ public class AiMessage {
         FunctionType(int code, String desc) {
             this.code = code;
             this.desc = desc;
-        }
-
-        public int getCode() {
-            return code;
-        }
-
-        public String getDesc() {
-            return desc;
         }
 
         // 可选：通过 code 获取枚举
@@ -100,6 +90,7 @@ public class AiMessage {
     /**
      * 角色枚举
      */
+    @Getter
     public enum Role {
         USER("user"),
         ASSISTANT("assistant"),
@@ -111,9 +102,6 @@ public class AiMessage {
             this.value = value;
         }
 
-        public String getValue() {
-            return value;
-        }
     }
 
     @PrePersist

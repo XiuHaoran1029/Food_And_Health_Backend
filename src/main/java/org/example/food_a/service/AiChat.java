@@ -18,10 +18,10 @@ import java.util.List;
 public class AiChat {
     private static final String API_TOKEN = "sk-smbknqcgluhiwsehcgwfovmfbnqvtfzsmmxpjxieglcjidvs";
     private static final String API_URL = "https://api.siliconflow.cn/v1/chat/completions";
-    private static final String DEFAULT_MODEL = "deepseek-ai/DeepSeek-V3.2";
-    private static final String VISION_MODEL = "Qwen/Qwen2.5-VL-32B-Instruct";
+    private static final String DEFAULT_MODEL = "Qwen/Qwen3-14B";
+    private static final String VISION_MODEL = "Qwen/Qwen3-VL-8B-Instruct";
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String SYSTEM_PROMPT = "# Role\n" +
             "你是一名智能健康助手，一位兼具医学专业知识与人文关怀的虚拟健康顾问。你的核心使命是为用户提供科学、准确、易懂的健康建议，同时给予用户情感上的支持与鼓励。\n" +
@@ -54,27 +54,33 @@ public class AiChat {
             "现在，请准备好以智能健康助手的身份开始服务。请等待用户的消息，并始终记住：安全第一，专业为本，温暖相伴。";
 
     public String getAiResponseWithContext(String userInput, List<AiMessage> historyMessages) throws Exception {
-        return callAIWithContext(userInput, null, null, historyMessages, SYSTEM_PROMPT);
+        return callAIWithContext(userInput, null, historyMessages, SYSTEM_PROMPT);
     }
 
     public String getAiResponseWithContext(String userInput, String base64Image,
-                                           String mimeType, List<AiMessage> historyMessages) throws Exception {
-        return callAIWithContext(userInput, base64Image, mimeType, historyMessages, SYSTEM_PROMPT);
+                                           List<AiMessage> historyMessages) throws Exception {
+        return callAIWithContext(userInput, base64Image, historyMessages, SYSTEM_PROMPT);
     }
 
     protected String getAiResponseWithCustomSystem(String customSystemPrompt, String userInput,
-                                                    String base64Image, String mimeType,
-                                                    List<AiMessage> historyMessages) throws Exception {
-        return callAIWithContext(userInput, base64Image, mimeType, historyMessages, customSystemPrompt);
+                                                   String base64Image,
+                                                   List<AiMessage> historyMessages) throws Exception {
+        return callAIWithContext(userInput, base64Image, historyMessages, customSystemPrompt);
     }
 
     private String callAIWithContext(String userInput, String base64Image,
-                                     String mimeType, List<AiMessage> historyMessages,
+                                     List<AiMessage> historyMessages,
                                      String systemPrompt) throws Exception {
         boolean hasImage = base64Image != null && !base64Image.isEmpty();
-
-        System.out.println("正在运行AI对话（" + (hasImage ? "多模态" : "纯文本") +
-                "模式，历史消息数：" + historyMessages.size() + "）");
+        // 【调试】打印关键入参摘要（避免打印过长的 Base64）
+        System.out.println("=== AI 调用开始 ===");
+        System.out.println("模式: " + (hasImage ? "多模态" : "纯文本"));
+        System.out.println("历史消息数: " + historyMessages.size());
+        if (hasImage) {
+            System.out.println("图片前缀检测: " + (base64Image.startsWith("iVBOR") ? "PNG" :
+                    base64Image.startsWith("R0lG") ? "GIF" : "JPEG/Other"));
+        }
+        System.out.println("UserInput: " + userInput); // 可选：打印用户输入
 
         ObjectNode payload = objectMapper.createObjectNode();
         payload.put("model", hasImage ? VISION_MODEL : DEFAULT_MODEL);
@@ -83,12 +89,13 @@ public class AiChat {
         payload.put("temperature", 0.7);
 
         ArrayNode messages = objectMapper.createArrayNode();
-
+try{
         ObjectNode systemMsg = objectMapper.createObjectNode();
         systemMsg.put("role", "system");
         systemMsg.put("content", systemPrompt);
         messages.add(systemMsg);
 
+        // 复制并反转历史记录，确保顺序正确（旧 -> 新）
         List<AiMessage> orderedHistory = new java.util.ArrayList<>(historyMessages);
         java.util.Collections.reverse(orderedHistory);
 
@@ -112,8 +119,33 @@ public class AiChat {
 
             ObjectNode imageContent = objectMapper.createObjectNode();
             imageContent.put("type", "image_url");
+
             ObjectNode imageUrl = objectMapper.createObjectNode();
-            imageUrl.put("url", "data:" + mimeType + ";base64," + base64Image);
+
+            String pureBase64 = base64Image;
+            String detectedPrefix = "";
+            if (base64Image.contains(",")) {
+                int commaIndex = base64Image.indexOf(",");
+                detectedPrefix = base64Image.substring(0, commaIndex + 1);
+                pureBase64 = base64Image.substring(commaIndex + 1);
+            }
+
+            String prefix;
+            if (!detectedPrefix.isEmpty()) {
+                prefix = detectedPrefix;
+            } else {
+                prefix = "data:image/jpeg;base64,";
+                if (pureBase64.startsWith("iVBORw0KGgo")) {
+                    prefix = "data:image/png;base64,";
+                } else if (pureBase64.startsWith("R0lGODdh") || pureBase64.startsWith("R0lGODlh")) {
+                    prefix = "data:image/gif;base64,";
+                }
+            }
+            String dataUri = prefix + pureBase64;
+            System.out.println("Data URI prefix: " + prefix);
+            System.out.println("Pure Base64 length: " + pureBase64.length());
+
+            imageUrl.put("url", dataUri);
             imageContent.set("image_url", imageUrl);
             contentArray.add(imageContent);
 
@@ -129,7 +161,10 @@ public class AiChat {
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
 
+        // 【调试】打印最终请求体大小（估算）
         String requestBody = objectMapper.writeValueAsString(payload);
+        System.out.println("请求体大小: " + (requestBody.length() / 1024) + " KB");
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
                 .header("Authorization", "Bearer " + API_TOKEN)
@@ -140,13 +175,28 @@ public class AiChat {
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
+        // 【关键检查点 1】非 200 状态码
         if (response.statusCode() != 200) {
-            throw new Exception("API调用失败，状态码：" + response.statusCode() + "，错误信息：" + response.body());
+            System.err.println("=== AI 调用失败 (HTTP " + response.statusCode() + ") ===");
+            System.err.println("错误响应体: " + response.body());
+            throw new Exception("API调用失败，状态码：" + response.statusCode() +
+                    "，错误信息：" + response.body());
         }
 
+        System.out.println("=== AI 调用成功，开始解析 ===");
         return parseAIResponse(response.body());
+
+    } catch (Exception e) {
+        // 【关键检查点 2】捕获所有未预期异常
+        System.err.println("=== AI 调用发生异常 ===");
+        System.err.println("异常类型: " + e.getClass().getName());
+        System.err.println("异常信息: " + e.getMessage());
+        e.printStackTrace(); // 打印完整堆栈
+        throw e; // 继续向上抛出
+    }
     }
 
+    // parseAIResponse 方法保持不变
     private String parseAIResponse(String responseBody) throws Exception {
         JsonNode responseJson = objectMapper.readTree(responseBody);
 

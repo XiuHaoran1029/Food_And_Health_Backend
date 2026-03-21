@@ -39,4 +39,15 @@ public class MessageRequest {
      * 图片种类//零食数量
      */
     private String mimeType;
+
+//    public MessageRequest(Long userId, Long conversationId, String content, String role, String function_type, String img) {
+//        System.out.print("userId:"+userId);
+//        System.out.print("conversationId:"+conversationId);
+//        System.out.print("content:"+content);
+//        System.out.print("role:"+role);
+//        System.out.print("function_type:"+function_type);
+//        System.out.print("img:"+img);
+//
+//    }
+
 }
