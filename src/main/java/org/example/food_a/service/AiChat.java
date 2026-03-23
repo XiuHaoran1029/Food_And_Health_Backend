@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.example.food_a.entity.AiMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -24,6 +25,9 @@ public class AiChat {
     private static final String VISION_MODEL = "doubao-seed-2-0-mini-260215";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${test.path}")
+    private String webPath;
 
     private static final String SYSTEM_PROMPT = "# Role\n" +
             "你是一名智能健康助手，一位兼具医学专业知识与人文关怀的虚拟健康顾问。你的核心使命是为用户提供科学、准确、易懂的健康建议，同时给予用户情感上的支持与鼓励。\n" +
@@ -77,38 +81,37 @@ public class AiChat {
         return callAIWithContext(userInput, base64Image, historyMessages, customSystemPrompt);
     }
 
-    private String callAIWithContext(String userInput, String base64Image,
+    private String callAIWithContext(String userInput, String imageUrl,
                                      List<AiMessage> historyMessages,
                                      String systemPrompt) throws Exception {
-        boolean hasImage = base64Image != null && !base64Image.isEmpty();
-        // 【调试】打印关键入参摘要（避免打印过长的 Base64）
+        // 【修改1】判断是否有图片（现在是 URL）
+        boolean hasImage = imageUrl != null && !imageUrl.isEmpty();
+
+        // 调试日志
         System.out.println("=== AI 调用开始 ===");
         System.out.println("模式: " + (hasImage ? "多模态" : "纯文本"));
         System.out.println("历史消息数: " + historyMessages.size());
         if (hasImage) {
-            System.out.println("图片前缀检测: " + (base64Image.startsWith("iVBOR") ? "PNG" :
-                    base64Image.startsWith("R0lG") ? "GIF" : "JPEG/Other"));
+            System.out.println("图片URL: " + imageUrl);
         }
-        System.out.println("UserInput: " + userInput); // 可选：打印用户输入
+        System.out.println("UserInput: " + userInput);
 
         ObjectNode payload = objectMapper.createObjectNode();
         payload.put("model", hasImage ? VISION_MODEL : DEFAULT_MODEL);
         payload.put("stream", false);
-//        payload.put("reasoning_effort","medium");
         payload.put("max_tokens", 10000);
         payload.put("temperature", 0.7);
 
         ArrayNode messages = objectMapper.createArrayNode();
-try{
+
         ObjectNode systemMsg = objectMapper.createObjectNode();
         systemMsg.put("role", "system");
         systemMsg.put("content", systemPrompt);
         messages.add(systemMsg);
 
-        // 复制并反转历史记录，确保顺序正确（旧 -> 新）
+        // 历史消息
         List<AiMessage> orderedHistory = new java.util.ArrayList<>(historyMessages);
         java.util.Collections.reverse(orderedHistory);
-
         for (AiMessage msg : orderedHistory) {
             ObjectNode historyMsg = objectMapper.createObjectNode();
             historyMsg.put("role", msg.getRole().getValue());
@@ -119,44 +122,24 @@ try{
         ObjectNode userMsg = objectMapper.createObjectNode();
         userMsg.put("role", "user");
 
+        // 【修改2】核心：使用 URL 构造多模态消息
         if (hasImage) {
             ArrayNode contentArray = objectMapper.createArrayNode();
 
+            // 文本
             ObjectNode textContent = objectMapper.createObjectNode();
             textContent.put("type", "text");
             textContent.put("text", userInput);
             contentArray.add(textContent);
 
+            // 图片（直接传URL，无任何Base64处理）
             ObjectNode imageContent = objectMapper.createObjectNode();
             imageContent.put("type", "image_url");
 
-            ObjectNode imageUrl = objectMapper.createObjectNode();
+            ObjectNode urlObj = objectMapper.createObjectNode();
+            urlObj.put("url", webPath+"/image/"+imageUrl); // 直接放URL
 
-            String pureBase64 = base64Image;
-            String detectedPrefix = "";
-            if (base64Image.contains(",")) {
-                int commaIndex = base64Image.indexOf(",");
-                detectedPrefix = base64Image.substring(0, commaIndex + 1);
-                pureBase64 = base64Image.substring(commaIndex + 1);
-            }
-
-            String prefix;
-            if (!detectedPrefix.isEmpty()) {
-                prefix = detectedPrefix;
-            } else {
-                prefix = "data:image/jpeg;base64,";
-                if (pureBase64.startsWith("iVBORw0KGgo")) {
-                    prefix = "data:image/png;base64,";
-                } else if (pureBase64.startsWith("R0lGODdh") || pureBase64.startsWith("R0lGODlh")) {
-                    prefix = "data:image/gif;base64,";
-                }
-            }
-            String dataUri = prefix + pureBase64;
-            System.out.println("Data URI prefix: " + prefix);
-            System.out.println("Pure Base64 length: " + pureBase64.length());
-
-            imageUrl.put("url", dataUri);
-            imageContent.set("image_url", imageUrl);
+            imageContent.set("image_url", urlObj);
             contentArray.add(imageContent);
 
             userMsg.set("content", contentArray);
@@ -164,58 +147,45 @@ try{
             userMsg.put("content", userInput);
         }
         messages.add(userMsg);
-
         payload.set("messages", messages);
 
+        // 发送请求
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
 
-        // 【调试】打印最终请求体大小（估算）
         String requestBody = objectMapper.writeValueAsString(payload);
         System.out.println("请求体大小: " + (requestBody.length() / 1024) + " KB");
 
-    HttpRequest request;
-    if(hasImage) {
+        HttpRequest request;
+        if (hasImage) {
             request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL_VL))
                     .header("Authorization", "Bearer " + API_TOKEN_VL)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .timeout(Duration.ofSeconds(hasImage ? 120 : 60))
+                    .timeout(Duration.ofSeconds(120))
                     .build();
-        }else{
+        } else {
             request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Authorization", "Bearer " + API_TOKEN)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                    .timeout(Duration.ofSeconds(hasImage ? 120 : 60))
+                    .timeout(Duration.ofSeconds(60))
                     .build();
         }
 
-
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // 【关键检查点 1】非 200 状态码
         if (response.statusCode() != 200) {
-            System.err.println("=== AI 调用失败 (HTTP " + response.statusCode() + ") ===");
-            System.err.println("错误响应体: " + response.body());
-            throw new Exception("API调用失败，状态码：" + response.statusCode() +
-                    "，错误信息：" + response.body());
+            System.err.println("AI调用失败 HTTP " + response.statusCode());
+            System.err.println("错误信息: " + response.body());
+            throw new Exception("API调用失败：" + response.statusCode());
         }
 
-        System.out.println("=== AI 调用成功，开始解析 ===");
+        System.out.println("=== AI 调用成功 ===");
         return parseAIResponse(response.body());
-
-    } catch (Exception e) {
-        // 【关键检查点 2】捕获所有未预期异常
-        System.err.println("=== AI 调用发生异常 ===");
-        System.err.println("异常类型: " + e.getClass().getName());
-        System.err.println("异常信息: " + e.getMessage());
-        e.printStackTrace(); // 打印完整堆栈
-        throw e; // 继续向上抛出
-    }
     }
 
     // parseAIResponse 方法保持不变

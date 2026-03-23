@@ -2,14 +2,17 @@ package org.example.food_a.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.food_a.common.ImageSaver;
+
 import org.example.food_a.entity.DietRestriction;
 import org.example.food_a.entity.Disease;
 import org.example.food_a.entity.User;
 import org.example.food_a.entity.UserThreeMeals;
 import org.example.food_a.repository.UserRepository;
 import org.example.food_a.repository.UserThreeMealsRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import static org.example.food_a.common.ImageSaver.saveMealImage;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -25,6 +28,12 @@ public class FoodAnalysis extends AiChat {
 
     private final UserThreeMealsRepository userThreeMealsRepository;
     private final UserRepository userRepository;
+
+    @Value("${image.path2}")
+    private String imgPath;
+    @Value("${test.path}")
+    private String webPath;
+
 
     private static final String SYSTEM_PROMPT = "# Role\n" +
             "你是一位经验丰富、语气温和且充满关怀的饮食健康专家。你擅长通过数据分析用户的饮食习惯，结合营养学知识，提供个性化、可执行且令人愉悦的饮食建议。你的沟通风格如春风般和煦，避免使用生硬的医学术语或命令式口吻，而是像一位贴心的朋友在给予指导。\n" +
@@ -103,22 +112,22 @@ public class FoodAnalysis extends AiChat {
         // 【修改点】调用去掉了 mimeType 参数
         String aiSuggestion = getAiResponseWithCustomSystem(SYSTEM_PROMPT, prompt, imageBase64, new ArrayList<>());
 
-        String imageUrl = "";
-        if (imageBase64 != null && !imageBase64.isEmpty()) {
-            try {
-                // 【修改点】调用去掉了 mimeType 参数
-                // 请确保 ImageSaver.saveBase64ForMeal 方法签名也已同步更新
-                imageUrl = ImageSaver.saveBase64ForMeal(imageBase64, userId, mealType, "src/main/resources/img");
-            } catch (IOException e) {
-                throw new Exception("图片保存失败：" + e.getMessage(), e);
-            }
-        }
+//        String imageUrl = "";
+//        if (imageBase64 != null && !imageBase64.isEmpty()) {
+//            try {
+//                // 【修改点】调用去掉了 mimeType 参数
+//                // 请确保 ImageSaver.saveBase64ForMeal 方法签名也已同步更新
+//                imageUrl = saveMealImage(imageBase64, userId, mealType, imgPath);
+//            } catch (IOException e) {
+//                throw new Exception("图片保存失败：" + e.getMessage(), e);
+//            }
+//        }
 
         UserThreeMeals mealRecord = new UserThreeMeals();
         mealRecord.setUserId(userId);
         mealRecord.setMealType(mealType);
         mealRecord.setMealName(mealName);
-        mealRecord.setMealPicUrl(imageUrl);
+        mealRecord.setMealPicUrl(imageBase64);
         mealRecord.setAiSuggest(aiSuggestion);
         mealRecord.setUpdateTime(LocalDateTime.now());
 
@@ -150,6 +159,7 @@ public class FoodAnalysis extends AiChat {
                         .append("\n");
             }
             prompt.append("\n");
+            System.out.print(prompt.toString());
         }
 
         if (historyMeals != null && !historyMeals.isEmpty()) {

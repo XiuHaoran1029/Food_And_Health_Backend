@@ -64,7 +64,7 @@ public class User {
      * 对应: avatar_url varchar(512) not null
      */
     @Column(name = "avatar_url", length = 512, nullable = false, columnDefinition = "varchar(512) COMMENT '头像图片地址'")
-    private String avatarUrl="src/main/resources/avatar/empty.jpg";
+    private String avatarUrl="empty.jpg";
 
     /**
      * 配置多对多关系

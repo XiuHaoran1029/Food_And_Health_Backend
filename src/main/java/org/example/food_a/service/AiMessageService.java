@@ -1,19 +1,22 @@
 package org.example.food_a.service;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.food_a.entity.AiMessage;
 import org.example.food_a.entity.AiConversation;
 import org.example.food_a.repository.AiMessageRepository;
 import org.example.food_a.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import static org.example.food_a.common.ImageSaver.convertToBase64;
-import static org.example.food_a.common.ImageSaver.saveBase64;
+import static  org.example.food_a.common.ImageSaver.saveAvatar;
+import static org.example.food_a.common.ImageSaver.fileToBase64;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +31,16 @@ public class AiMessageService {
     private final FoodAnalysis foodAnalysis;
     private final SnackAnalysis snackAnalysis;
     private final ReportAnalysis reportAnalysis;
+
+    @Value("${image.path1}")
+    private String avatarPath;
+
+    @Value("${image.path2}")
+    private String imgPath;
+
+    @Value("${test.path}")
+    private String webPath;
+
 
     /**
      * 发送消息（带上下文记忆）
@@ -61,7 +74,7 @@ public class AiMessageService {
         if (imgBase64 != null && imgBase64.startsWith("data:image")) {
 
             // 使用 messageId 替换 userId (原有逻辑)
-            String imgUrl = saveBase64(imgBase64, messageId, "src/main/resources/img");
+            String imgUrl = saveAvatar(imgBase64, messageId, imgPath);
 
             // 更新消息对象的图片 URL
             userMessage.setImg(imgUrl);
@@ -83,14 +96,14 @@ public class AiMessageService {
                 // 调用AI获取回复（传递上下文）
                 aiContent = aiChat.getAiResponseWithContext(content, historyMessages);
             }else {
-                aiContent = aiChat.getAiResponseWithContext(content,imgBase64, historyMessages);
+                aiContent = aiChat.getAiResponseWithContext(content,userMessage.getImg(), historyMessages);
             }
         }else if(Objects.equals(function_type, "food_analysis")){
-            aiContent = foodAnalysis.analyzeMeal(userId,role,content,imgBase64);
+            aiContent = foodAnalysis.analyzeMeal(userId,role,content,userMessage.getImg());
         }else if(Objects.equals(function_type, "snack_analysis")){
             aiContent = snackAnalysis.analyzeSnack(userId, content, mimeType, imgBase64, role);
         }else if(Objects.equals(function_type, "report_analysis")){
-            aiContent = reportAnalysis.analyzeReport(imgBase64);
+            aiContent = reportAnalysis.analyzeReport(userMessage.getImg());
         }
 
 
@@ -131,12 +144,9 @@ public class AiMessageService {
                 // 只有当消息包含图片且角色可能需要展示图片时转换 (根据业务需求调整)
                 // 结构体4显示有 img 字段
                 if (message.getImg() != null && !message.getImg().isEmpty()) {
-                    // 调用工具类转换
-                    // 注意：如果 imgUrl 是相对路径 (如 src/main/...)，确保服务器运行时该路径可访问
-                    // 如果项目打包成 jar，src/main/resources 下的文件可能需要用 ClassLoader 读取，而不是 File 路径
-                    // 下面假设是文件系统绝对路径或开发环境相对路径
-                    String base64Img = convertToBase64(message.getImg());
-                    message.setImg(base64Img);
+                    // 拼接完整访问 URL
+                    String fullUrl =webPath+ "/image/" + message.getImg();
+                    message.setImg(fullUrl);
                 }
             }
         }
