@@ -1,5 +1,8 @@
 package org.example.food_a.common;
 
+import org.springframework.util.StringUtils;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -284,5 +287,50 @@ public class ImageSaver {
             return null;
         }
         return MIME_TO_EXTENSION.get(mimeType.toLowerCase());
+    }
+
+    /**
+     * 将本地图片路径转换为 Base64 字符串 (包含前缀)
+     * @param imagePath 本地相对路径或绝对路径，例如 "src/main/resources/img/176.jpg"
+     * @return Base64 字符串，格式如 "data:image/jpeg;base64,/9j/4AAQSkZJRg..."；如果文件不存在则返回原路径或空
+     */
+    public static String convertToBase64(String imagePath) {
+        if (!StringUtils.hasText(imagePath)) {
+            return imagePath;
+        }
+
+        // 如果已经是 base64 开头，直接返回，避免重复转换
+        if (imagePath.startsWith("data:image")) {
+            return imagePath;
+        }
+
+        File file = new File(imagePath);
+        if (!file.exists()) {
+            // 可选：记录日志，或者返回默认图片的 base64，这里选择返回原路径让前端处理或显示破图
+            System.err.println("Image file not found: " + imagePath);
+            return imagePath;
+        }
+
+        try {
+            // 读取文件字节
+            byte[] fileContent = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
+            // 编码
+            String base64Data = Base64.getEncoder().encodeToString(fileContent);
+
+            // 获取文件后缀以确定 MIME 类型 (简单实现)
+            String mimeType = "image/jpeg"; // 默认
+            if (imagePath.toLowerCase().endsWith(".png")) {
+                mimeType = "image/png";
+            } else if (imagePath.toLowerCase().endsWith(".gif")) {
+                mimeType = "image/gif";
+            } else if (imagePath.toLowerCase().endsWith(".webp")) {
+                mimeType = "image/webp";
+            }
+
+            return "data:" + mimeType + ";base64," + base64Data;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return imagePath; // 出错时返回原路径
+        }
     }
 }

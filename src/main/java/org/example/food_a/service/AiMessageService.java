@@ -11,6 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import static org.example.food_a.common.ImageSaver.convertToBase64;
 import static org.example.food_a.common.ImageSaver.saveBase64;
 
 import java.time.LocalDateTime;
@@ -32,16 +34,10 @@ public class AiMessageService {
      */
     @Transactional
     public AiMessage sendMessage(Long conversationId, Long userId, String role, String content,String function_type,String imgBase64,String mimeType) throws Exception {
-        System.out.print("userId:"+userId);
-        System.out.print("conversationId:"+conversationId);
-        System.out.print("content:"+content);
-        System.out.print("role:"+role);
-        System.out.print("function_type:"+function_type);
-        System.out.print("img:"+imgBase64.length());
-
         // 校验对话
         AiConversation conversation = conversationService.getConversationById(conversationId, userId);
         if (conversation == null) {
+            System.out.print("对话id为空");
             throw new RuntimeException("对话不存在或无权限");
         }
         
@@ -62,15 +58,17 @@ public class AiMessageService {
         Long messageId = userMessage.getId();
 
 // 第二步：如果有图片内容，则处理图片
-        if (imgBase64 != null && !imgBase64.isEmpty()) {
-            // 使用 messageId 替换 userId
+        if (imgBase64 != null && imgBase64.startsWith("data:image")) {
+
+            // 使用 messageId 替换 userId (原有逻辑)
             String imgUrl = saveBase64(imgBase64, messageId, "src/main/resources/img");
 
             // 更新消息对象的图片 URL
-            userMessage.setImgUrl(imgUrl);
+            userMessage.setImg(imgUrl);
 
             // 第三步：更新保存
             messageRepository.save(userMessage);
+
         }
         
         // 更新对话最后更新时间
@@ -90,7 +88,7 @@ public class AiMessageService {
         }else if(Objects.equals(function_type, "food_analysis")){
             aiContent = foodAnalysis.analyzeMeal(userId,role,content,imgBase64);
         }else if(Objects.equals(function_type, "snack_analysis")){
-            aiContent = snackAnalysis.analyzeSnack(userId, content, "100", "", role);
+            aiContent = snackAnalysis.analyzeSnack(userId, content, mimeType, imgBase64, role);
         }else if(Objects.equals(function_type, "report_analysis")){
             aiContent = reportAnalysis.analyzeReport(imgBase64);
         }
@@ -106,6 +104,7 @@ public class AiMessageService {
         
         // 更新对话最后更新时间
         conversation.setUpdateTime(LocalDateTime.now());
+        System.out.print(aiContent);
         
         return messageRepository.save(aiMessage);
     }
@@ -113,13 +112,39 @@ public class AiMessageService {
     /**
      * 分页查询对话消息
      */
+
     public Page<AiMessage> getMessageList(Long conversationId, Long userId, Integer pageNum, Integer pageSize) {
-        // 校验对话权限
+        // 1. 校验对话权限
         AiConversation conversation = conversationService.getConversationById(conversationId, userId);
         if (conversation == null) {
             throw new RuntimeException("对话不存在或无权限");
         }
+
+        // 2. 分页查询
         Pageable pageable = PageRequest.of(pageNum - 1, pageSize, Sort.by(Sort.Direction.ASC, "sequence"));
-        return messageRepository.findByConversationIdAndDeleteFlagOrderBySequenceAsc(conversationId, 0, pageable);
+        Page<AiMessage> page = messageRepository.findByConversationIdAndDeleteFlagOrderBySequenceAsc(conversationId, 0, pageable);
+
+        // 3. 【核心修改】遍历当前页数据，将 imgUrl 转换为 Base64
+        List<AiMessage> content = page.getContent();
+        if (!content.isEmpty()) {
+            for (AiMessage message : content) {
+                // 只有当消息包含图片且角色可能需要展示图片时转换 (根据业务需求调整)
+                // 结构体4显示有 img 字段
+                if (message.getImg() != null && !message.getImg().isEmpty()) {
+                    // 调用工具类转换
+                    // 注意：如果 imgUrl 是相对路径 (如 src/main/...)，确保服务器运行时该路径可访问
+                    // 如果项目打包成 jar，src/main/resources 下的文件可能需要用 ClassLoader 读取，而不是 File 路径
+                    // 下面假设是文件系统绝对路径或开发环境相对路径
+                    String base64Img = convertToBase64(message.getImg());
+                    message.setImg(base64Img);
+                }
+            }
+        }
+
+        // 注意：如果直接修改了 page.getContent() 里的对象，Spring Data JPA 的 Page 实现通常会反映这些更改。
+        // 但如果需要更严谨的做法，建议构造一个新的 Page 对象返回，或者使用 DTO。
+        // 此处假设直接修改对象是可行的。
+
+        return page;
     }
 }

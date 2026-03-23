@@ -33,18 +33,13 @@ public class AiMessageController {
         String img= messageRequest.getImg();
         String mimeType= messageRequest.getMimeType();
         System.out.print("收到消息");
-        if(Objects.equals(function_type, "medication_reminder")){
-
-            return Result.success();
-        }else{
-            try {
-                System.out.println(function_type);
-                AiMessage message = messageService.sendMessage(conversationId, userId, role, content,function_type,img,mimeType);
-                System.out.println(message);
-                return Result.success(message);
-            } catch (Exception e) {
-                return Result.error(e.getMessage());
-            }
+        try {
+            System.out.println(function_type);
+            AiMessage message = messageService.sendMessage(conversationId, userId, role, content,function_type,img,mimeType);
+            return Result.success(message);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return Result.error(e.getMessage());
         }
     }
 

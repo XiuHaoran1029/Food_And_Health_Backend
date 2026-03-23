@@ -17,9 +17,11 @@ import java.util.List;
 @Service
 public class AiChat {
     private static final String API_TOKEN = "sk-smbknqcgluhiwsehcgwfovmfbnqvtfzsmmxpjxieglcjidvs";
+    private static final String API_TOKEN_VL="2f7cd717-8c63-414d-bb37-737880511646";
     private static final String API_URL = "https://api.siliconflow.cn/v1/chat/completions";
-    private static final String DEFAULT_MODEL = "Qwen/Qwen3-14B";
-    private static final String VISION_MODEL = "Qwen/Qwen3-VL-8B-Instruct";
+    private static final String API_URL_VL="https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+    private static final String DEFAULT_MODEL = "Qwen/Qwen3-8B";
+    private static final String VISION_MODEL = "doubao-seed-2-0-mini-260215";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -50,6 +52,13 @@ public class AiChat {
             "4. 生成回复：按照共情 -> 分析 -> 建议 -> 提醒的结构组织语言。\n" +
             "5. 自我审查：检查是否包含绝对化的诊断词汇，若有则修正为可能性描述。\n" +
             "\n" +
+            "\"- **Markdown 排版规范（重要）**：\\n\" +\n" +
+            "  - **必须全程使用标准的 Markdown 格式**进行回复，以增强可读性。\\n\" +\n" +
+            "  - **标题样式**：所有一级标题（##）和二级标题（###）中的核心文字必须 **全部大写** 并 **加粗**。" +
+            "  - **强调重点**：关键结论,或重要建议请使用 **加粗** (`**text**`) 突出显示。" +
+            "  - **引用块**：分析性、描述性的段落请使用引用块 (`>`) 包裹，营造对话感." +
+            "  - **列表**：推荐方案必须使用清晰的无序列表 (`-`) 或有序列表，保持结构整洁。" +
+            "  - **分隔线**：不同大板块之间使用分隔线 (`---`) 进行视觉隔离。"+
             "# Initialization\n" +
             "现在，请准备好以智能健康助手的身份开始服务。请等待用户的消息，并始终记住：安全第一，专业为本，温暖相伴。";
 
@@ -85,6 +94,7 @@ public class AiChat {
         ObjectNode payload = objectMapper.createObjectNode();
         payload.put("model", hasImage ? VISION_MODEL : DEFAULT_MODEL);
         payload.put("stream", false);
+//        payload.put("reasoning_effort","medium");
         payload.put("max_tokens", 10000);
         payload.put("temperature", 0.7);
 
@@ -165,13 +175,25 @@ try{
         String requestBody = objectMapper.writeValueAsString(payload);
         System.out.println("请求体大小: " + (requestBody.length() / 1024) + " KB");
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL))
-                .header("Authorization", "Bearer " + API_TOKEN)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .timeout(Duration.ofSeconds(hasImage ? 120 : 60))
-                .build();
+    HttpRequest request;
+    if(hasImage) {
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL_VL))
+                    .header("Authorization", "Bearer " + API_TOKEN_VL)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .timeout(Duration.ofSeconds(hasImage ? 120 : 60))
+                    .build();
+        }else{
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL))
+                    .header("Authorization", "Bearer " + API_TOKEN)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .timeout(Duration.ofSeconds(hasImage ? 120 : 60))
+                    .build();
+        }
+
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 

@@ -55,8 +55,8 @@ public class AiMessage {
     @Column(name = "role", nullable = false, length = 20, columnDefinition = "varchar(20) COMMENT '角色：user/assistant/system'")
     private Role role;
 
-    @Column(name = "img_url",nullable = true,length = 50,columnDefinition = "varchar(50)")
-    private String imgUrl;
+    @Column(name = "img",nullable = true,length = 50,columnDefinition = "varchar(50)")
+    private String img;
     /**
      * 功能种类枚举
      * ⚠️ 警告：使用 EnumType.ORDINAL 时，绝对不要改变以下枚举的顺序！
