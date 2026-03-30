@@ -128,8 +128,9 @@ public class UserService {
 
         // ===================== 头像处理 =====================
         String avatar;
-        if (img.isEmpty()) avatar = settingUser.getAvatarUrl();
-        else {
+        if (img == null || img.isEmpty()) {
+            avatar = settingUser.getAvatarUrl();
+        } else {
             try {
                 avatar = saveAvatar(img, userid, avatarPath);
             } catch (IOException e) {

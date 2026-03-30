@@ -84,15 +84,20 @@ public class AiChat {
     private String callAIWithContext(String userInput, String imageUrl,
                                      List<AiMessage> historyMessages,
                                      String systemPrompt) throws Exception {
-        // 【修改1】判断是否有图片（现在是 URL）
+        // 图片可以是 data URL(base64) 或文件名
         boolean hasImage = imageUrl != null && !imageUrl.isEmpty();
+        boolean isBase64Image = hasImage && imageUrl.startsWith("data:image");
 
         // 调试日志
         System.out.println("=== AI 调用开始 ===");
         System.out.println("模式: " + (hasImage ? "多模态" : "纯文本"));
         System.out.println("历史消息数: " + historyMessages.size());
         if (hasImage) {
-            System.out.println("图片URL: " + imageUrl);
+            if (isBase64Image) {
+                System.out.println("图片Base64长度: " + imageUrl.length());
+            } else {
+                System.out.println("图片URL: " + imageUrl);
+            }
         }
         System.out.println("UserInput: " + userInput);
 
@@ -132,12 +137,13 @@ public class AiChat {
             textContent.put("text", userInput);
             contentArray.add(textContent);
 
-            // 图片（直接传URL，无任何Base64处理）
+            // 图片（支持 data URL 或 文件名）
             ObjectNode imageContent = objectMapper.createObjectNode();
             imageContent.put("type", "image_url");
 
             ObjectNode urlObj = objectMapper.createObjectNode();
-            urlObj.put("url", webPath+"/image/"+imageUrl); // 直接放URL
+            String finalUrl = isBase64Image ? imageUrl : webPath + "/image/" + imageUrl;
+            urlObj.put("url", finalUrl);
 
             imageContent.set("image_url", urlObj);
             contentArray.add(imageContent);

@@ -9,7 +9,6 @@ import org.example.food_a.dto.request.RegisterRequest;
 import org.example.food_a.dto.request.SettingRequest;
 import org.example.food_a.entity.User;
 import org.example.food_a.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,12 +24,8 @@ import static org.example.food_a.common.TokenGenerator.parseToken;
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
     private final UserService userService;
-    private final DecryptRSA RSA;
-
-    @Autowired
     public UserController(UserService userService, DecryptRSA RSA) {
         this.userService = userService;
-        this.RSA = RSA;
     }
 
     @PostMapping("/login")
@@ -97,7 +92,10 @@ public class UserController {
         Long userid = settingRequest.getUserid();
         List<String> sick=settingRequest.getSick();
         List<String> taboo=settingRequest.getTaboo();
-        String img=settingRequest.getAvatar();
+        String img = settingRequest.getImg();
+        if (img == null) {
+            img = settingRequest.getAvatar();
+        }
 
 
         Map<String, Object>map=userService.setting(username,userid,sick,taboo,img);
@@ -105,7 +103,7 @@ public class UserController {
     }
 
     @PostMapping("/setting/change")
-    public Result getSetting(@Valid @RequestBody SettingRequest settingRequest){
+    public Result<?> getSetting(@Valid @RequestBody SettingRequest settingRequest){
         Long userid = settingRequest.getUserid();
         try{
             String old_password = DecryptRSA.decryptRSA(settingRequest.getOld_password());

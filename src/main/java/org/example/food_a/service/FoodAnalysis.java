@@ -112,22 +112,24 @@ public class FoodAnalysis extends AiChat {
         // 【修改点】调用去掉了 mimeType 参数
         String aiSuggestion = getAiResponseWithCustomSystem(SYSTEM_PROMPT, prompt, imageBase64, new ArrayList<>());
 
-//        String imageUrl = "";
-//        if (imageBase64 != null && !imageBase64.isEmpty()) {
-//            try {
-//                // 【修改点】调用去掉了 mimeType 参数
-//                // 请确保 ImageSaver.saveBase64ForMeal 方法签名也已同步更新
-//                imageUrl = saveMealImage(imageBase64, userId, mealType, imgPath);
-//            } catch (IOException e) {
-//                throw new Exception("图片保存失败：" + e.getMessage(), e);
-//            }
-//        }
+        String imageUrl = "";
+        if (imageBase64 != null && !imageBase64.isEmpty()) {
+            if (imageBase64.startsWith("data:image")) {
+                try {
+                    imageUrl = saveMealImage(imageBase64, userId, mealType, imgPath);
+                } catch (IOException e) {
+                    throw new Exception("图片保存失败：" + e.getMessage(), e);
+                }
+            } else {
+                imageUrl = imageBase64;
+            }
+        }
 
         UserThreeMeals mealRecord = new UserThreeMeals();
         mealRecord.setUserId(userId);
         mealRecord.setMealType(mealType);
         mealRecord.setMealName(mealName);
-        mealRecord.setMealPicUrl(imageBase64);
+        mealRecord.setMealPicUrl(imageUrl);
         mealRecord.setAiSuggest(aiSuggestion);
         mealRecord.setUpdateTime(LocalDateTime.now());
 

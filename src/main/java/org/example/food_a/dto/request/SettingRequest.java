@@ -17,6 +17,7 @@ public class SettingRequest {
     // 从 String 改为 List<String> 列表
     private List<String> taboo;
     private String avatar;
+    private String img;
     private String old_password;
     private String new_password;
 }

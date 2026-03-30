@@ -2,7 +2,6 @@ package org.example.food_a.entity;
 
 import jakarta.persistence.*; // 如果是 Spring Boot 2.x 或旧版 Java EE，请改为 import javax.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;

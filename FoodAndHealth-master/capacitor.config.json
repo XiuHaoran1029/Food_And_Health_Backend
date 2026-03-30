@@ -1,0 +1,18 @@
+{
+  "appId": "com.example.app",
+  "appName": "food",
+  "webDir": "dist",
+  "android": {
+    "webContentsDebuggingEnabled": true
+  },
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

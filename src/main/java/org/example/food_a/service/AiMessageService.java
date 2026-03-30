@@ -91,19 +91,20 @@ public class AiMessageService {
         List<AiMessage> historyMessages = messageRepository
                 .findTop10ByConversationIdAndDeleteFlagOrderBySequenceDesc(conversationId, 0);
         String aiContent="";
+        String aiImage = (imgBase64 != null && imgBase64.startsWith("data:image")) ? imgBase64 : null;
         if(Objects.equals(function_type, "normal")){
-            if(Objects.equals(imgBase64, "")){
+            if(imgBase64 == null || imgBase64.isEmpty()){
                 // 调用AI获取回复（传递上下文）
                 aiContent = aiChat.getAiResponseWithContext(content, historyMessages);
             }else {
-                aiContent = aiChat.getAiResponseWithContext(content,userMessage.getImg(), historyMessages);
+                aiContent = aiChat.getAiResponseWithContext(content, aiImage, historyMessages);
             }
         }else if(Objects.equals(function_type, "food_analysis")){
-            aiContent = foodAnalysis.analyzeMeal(userId,role,content,userMessage.getImg());
+            aiContent = foodAnalysis.analyzeMeal(userId, role, content, aiImage);
         }else if(Objects.equals(function_type, "snack_analysis")){
             aiContent = snackAnalysis.analyzeSnack(userId, content, mimeType, imgBase64, role);
         }else if(Objects.equals(function_type, "report_analysis")){
-            aiContent = reportAnalysis.analyzeReport(userMessage.getImg());
+            aiContent = reportAnalysis.analyzeReport(aiImage);
         }
 
 

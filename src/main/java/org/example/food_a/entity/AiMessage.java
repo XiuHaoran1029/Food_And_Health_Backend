@@ -55,7 +55,7 @@ public class AiMessage {
     @Column(name = "role", nullable = false, length = 20, columnDefinition = "varchar(20) COMMENT '角色：user/assistant/system'")
     private Role role;
 
-    @Column(name = "img",nullable = true,length = 50,columnDefinition = "varchar(50)")
+    @Column(name = "img_url", nullable = true, length = 50, columnDefinition = "varchar(50) COMMENT '图片地址'")
     private String img;
     /**
      * 功能种类枚举
