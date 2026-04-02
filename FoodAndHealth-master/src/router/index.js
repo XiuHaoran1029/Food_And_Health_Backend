@@ -26,6 +26,11 @@ const router = createRouter({
             component: () => import('@/components/MedicationReminder.vue')
         },
         {
+            path: '/meal-calendar',
+            name: 'MealCalendar',
+            component: () => import('@/components/MealCalendar.vue')
+        },
+        {
             path: '/settings',
             name: 'Settings',
             component: () => import('@/components/Settings.vue')

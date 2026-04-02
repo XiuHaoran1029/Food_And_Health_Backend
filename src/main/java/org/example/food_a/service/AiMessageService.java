@@ -3,6 +3,7 @@ package org.example.food_a.service;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.entity.AiMessage;
 import org.example.food_a.entity.AiConversation;
 import org.example.food_a.repository.AiMessageRepository;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiMessageService {
@@ -50,7 +52,7 @@ public class AiMessageService {
         // 校验对话
         AiConversation conversation = conversationService.getConversationById(conversationId, userId);
         if (conversation == null) {
-            System.out.print("对话id为空");
+            log.error("消息创建失败：对话不存在或无权限");
             throw new RuntimeException("对话不存在或无权限");
         }
         
@@ -90,20 +92,24 @@ public class AiMessageService {
         // 查询最近10条历史消息（用于上下文记忆）
         List<AiMessage> historyMessages = messageRepository
                 .findTop10ByConversationIdAndDeleteFlagOrderBySequenceDesc(conversationId, 0);
+        log.info("上下文长度为：{}", historyMessages.size());
         String aiContent="";
         String aiImage = (imgBase64 != null && imgBase64.startsWith("data:image")) ? imgBase64 : null;
         if(Objects.equals(function_type, "normal")){
+            log.info("普通对话模式");
             if(imgBase64 == null || imgBase64.isEmpty()){
-                // 调用AI获取回复（传递上下文）
                 aiContent = aiChat.getAiResponseWithContext(content, historyMessages);
             }else {
                 aiContent = aiChat.getAiResponseWithContext(content, aiImage, historyMessages);
             }
         }else if(Objects.equals(function_type, "food_analysis")){
+            log.info("食物分析模式");
             aiContent = foodAnalysis.analyzeMeal(userId, role, content, aiImage);
         }else if(Objects.equals(function_type, "snack_analysis")){
+            log.info("零食分析模式");
             aiContent = snackAnalysis.analyzeSnack(userId, content, mimeType, imgBase64, role);
         }else if(Objects.equals(function_type, "report_analysis")){
+            log.info("报告分析模式");
             aiContent = reportAnalysis.analyzeReport(aiImage);
         }
 
@@ -118,7 +124,7 @@ public class AiMessageService {
         
         // 更新对话最后更新时间
         conversation.setUpdateTime(LocalDateTime.now());
-        System.out.print(aiContent);
+        log.info("AI回复长度：{}",aiContent.length());
         
         return messageRepository.save(aiMessage);
     }
@@ -131,6 +137,7 @@ public class AiMessageService {
         // 1. 校验对话权限
         AiConversation conversation = conversationService.getConversationById(conversationId, userId);
         if (conversation == null) {
+            log.error("对话列表查询失败：对话不存在或无权限");
             throw new RuntimeException("对话不存在或无权限");
         }
 
@@ -152,9 +159,7 @@ public class AiMessageService {
             }
         }
 
-        // 注意：如果直接修改了 page.getContent() 里的对象，Spring Data JPA 的 Page 实现通常会反映这些更改。
-        // 但如果需要更严谨的做法，建议构造一个新的 Page 对象返回，或者使用 DTO。
-        // 此处假设直接修改对象是可行的。
+        log.info("对话列表查询成功，共{}条",content.size());
 
         return page;
     }

@@ -1,6 +1,7 @@
 package org.example.food_a.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.common.Result;
 import org.example.food_a.dto.request.AiConversationRequest;
 import org.example.food_a.dto.response.PageChatResponse;
@@ -14,6 +15,7 @@ import java.util.Map;
 /**
  * 对话接口
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/ai/conversation")
 @RequiredArgsConstructor
@@ -28,14 +30,17 @@ public class AiConversationController {
         try {
             Long userId = aiConversationRequest.getUserId();
             String title = aiConversationRequest.getTitle();
+            log.info("收到用户id为{}的创建对话请求",userId);
             AiConversation conversation = conversationService.createConversation(userId, title);
             Map<String, Object> data = new HashMap<>();
             data.put("id", conversation.getId());
             data.put("title", title);
             data.put("userId", userId);
             data.put("create_time", conversation.getCreateTime());
+            log.info("对话创建成功");
             return Result.success(data);
         } catch (Exception e) {
+            log.error("对话创建失败，原因：{}",e.getMessage());
             return Result.error(e.getMessage());
         }
     }
@@ -51,8 +56,10 @@ public class AiConversationController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize
     ) {
+        log.info("收到用户id为{}的获取对话列表请求",userId);
         // 直接调用服务层，无需封装AiConversationRequest
         PageChatResponse<AiConversation> result = conversationService.getConversationList(userId, pageNum, pageSize);
+        log.info("对话列表请求已处理");
         return Result.success(result);
     }
 

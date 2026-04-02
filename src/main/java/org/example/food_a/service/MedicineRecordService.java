@@ -1,6 +1,7 @@
 package org.example.food_a.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.entity.User;
 import org.example.food_a.entity.UserMedicine;
 import org.example.food_a.repository.UserMedicineRepository;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MedicineRecordService {
@@ -18,7 +20,7 @@ public class MedicineRecordService {
 
     public void recordMedicine(Long userId, String medicineName, Integer takeTimes, Long singleDosage, LocalDate stopTime){
 
-        System.out.println(medicineName);
+        log.info("正在创建用药提醒，药品名为：{}",medicineName);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
 
@@ -33,7 +35,7 @@ public class MedicineRecordService {
 
             userMedicineRepository.save(userMedicine);
         }catch (Exception e){
-            e.printStackTrace();
+            log.info("创建用药提醒失败：{}",e.getMessage());
             throw  new RuntimeException("创建用药提醒失败");
         }
 

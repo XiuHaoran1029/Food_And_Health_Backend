@@ -42,8 +42,11 @@ public class UserSnackRecord {
     /**
      * 零食记录备注名，如：下午加餐薯片
      */
-    @Column(name = "snack_record_name", nullable = false, length = 255, columnDefinition = "varchar(255) DEFAULT '' COMMENT '零食记录备注名'")
-    private String snackRecordName;
+    @Column(name = "remark", nullable = false, length = 255, columnDefinition = "varchar(255) DEFAULT '' COMMENT '零食记录备注名'")
+    private String remark;
+
+    @Column(name = "snack_name", nullable = false, length = 255, columnDefinition = "varchar(255) DEFAULT '' COMMENT '零食名称'")
+    private String snackName;
 
     /**
      * 关联零食营养表主键ID，通用零食填此值，自定义零食留NULL
@@ -72,8 +75,8 @@ public class UserSnackRecord {
     // 如果需要自动处理默认值（当数据库默认值不生效时），可以在 @PrePersist 中处理
     @PrePersist
     public void prePersist() {
-        if (this.snackRecordName == null) {
-            this.snackRecordName = "";
+        if (this.remark == null) {
+            this.remark = "";
         }
         if (this.count == null) {
             this.count = 0.0;

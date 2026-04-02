@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.entity.AiMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,13 +16,14 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 
+@Slf4j
 @Service
 public class AiChat {
-    private static final String API_TOKEN = "sk-smbknqcgluhiwsehcgwfovmfbnqvtfzsmmxpjxieglcjidvs";
+    private static final String API_TOKEN = "2f7cd717-8c63-414d-bb37-737880511646";
     private static final String API_TOKEN_VL="2f7cd717-8c63-414d-bb37-737880511646";
-    private static final String API_URL = "https://api.siliconflow.cn/v1/chat/completions";
+    private static final String API_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
     private static final String API_URL_VL="https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-    private static final String DEFAULT_MODEL = "Qwen/Qwen3-8B";
+    private static final String DEFAULT_MODEL = "doubao-seed-2-0-mini-260215";
     private static final String VISION_MODEL = "doubao-seed-2-0-mini-260215";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -89,17 +91,17 @@ public class AiChat {
         boolean isBase64Image = hasImage && imageUrl.startsWith("data:image");
 
         // 调试日志
-        System.out.println("=== AI 调用开始 ===");
-        System.out.println("模式: " + (hasImage ? "多模态" : "纯文本"));
-        System.out.println("历史消息数: " + historyMessages.size());
+        log.info("=== AI 调用开始 ===");
+        log.info("模式: {}", hasImage ? "多模态" : "纯文本");
+        log.info("历史消息数: {}", historyMessages.size());
         if (hasImage) {
             if (isBase64Image) {
-                System.out.println("图片Base64长度: " + imageUrl.length());
+                log.info("图片Base64长度: {}", imageUrl.length());
             } else {
-                System.out.println("图片URL: " + imageUrl);
+                log.info("图片URL: {}", imageUrl);
             }
         }
-        System.out.println("UserInput: " + userInput);
+        log.info("用户输入: {}", userInput);
 
         ObjectNode payload = objectMapper.createObjectNode();
         payload.put("model", hasImage ? VISION_MODEL : DEFAULT_MODEL);
@@ -161,7 +163,7 @@ public class AiChat {
                 .build();
 
         String requestBody = objectMapper.writeValueAsString(payload);
-        System.out.println("请求体大小: " + (requestBody.length() / 1024) + " KB");
+        log.info("请求体大小: {} KB", requestBody.length() / 1024);
 
         HttpRequest request;
         if (hasImage) {
@@ -185,12 +187,12 @@ public class AiChat {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            System.err.println("AI调用失败 HTTP " + response.statusCode());
-            System.err.println("错误信息: " + response.body());
+            log.error("AI调用失败 HTTP {}", response.statusCode());
+            log.error("错误信息: {}", response.body());
             throw new Exception("API调用失败：" + response.statusCode());
         }
 
-        System.out.println("=== AI 调用成功 ===");
+        log.info("=== AI 调用成功 ===");;
         return parseAIResponse(response.body());
     }
 
@@ -201,25 +203,30 @@ public class AiChat {
         if (responseJson.has("error")) {
             JsonNode errorNode = responseJson.get("error");
             String errorMsg = errorNode.has("message") ? errorNode.get("message").asText() : "未知错误";
+            log.error("API返回错误：{}", errorMsg);
             throw new Exception("API返回错误：" + errorMsg);
         }
 
         if (!responseJson.has("choices")) {
+            log.error("API返回格式异常，无choices字段：{}", responseBody);
             throw new Exception("API返回格式异常，无choices字段：" + responseBody);
         }
 
         JsonNode choices = responseJson.get("choices");
         if (choices == null || choices.isEmpty() || !choices.isArray()) {
+            log.error("API返回的choices为空或不是数组：{}", responseBody);
             throw new Exception("API返回的choices为空或不是数组：" + responseBody);
         }
 
         JsonNode choice = choices.get(0);
         if (choice == null) {
+            log.error("API返回的choice为空：{}", responseBody);
             throw new Exception("API返回的choice为空：" + responseBody);
         }
 
         JsonNode message = choice.get("message");
         if (message == null) {
+            log.error("API返回的message为空：" + responseBody);
             throw new Exception("API返回的message为空：" + responseBody);
         }
 
@@ -230,7 +237,8 @@ public class AiChat {
             } else if (choice.has("delta") && choice.get("delta").has("content")) {
                 return choice.get("delta").get("content").asText();
             }
-            throw new Exception("AI回复格式异常，未找到content字段：" + responseBody);
+            log.error("API返回的message为空：" + responseBody);
+            throw new Exception("API返回的message为空：" + responseBody);
         }
 
         return contentNode.asText();

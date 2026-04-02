@@ -2,7 +2,7 @@ package org.example.food_a.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.entity.DietRestriction;
 import org.example.food_a.entity.Disease;
 import org.example.food_a.entity.SnackNutrition;
@@ -11,7 +11,6 @@ import org.example.food_a.entity.UserSnackRecord;
 import org.example.food_a.repository.SnackNutritionRepository;
 import org.example.food_a.repository.UserRepository;
 import org.example.food_a.repository.UserSnackRecordRepository;
-import org.example.food_a.repository.UserThreeMealsRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SnackAnalysis extends AiChat{
@@ -83,90 +83,106 @@ public class SnackAnalysis extends AiChat{
         Integer roleValue = convertRoleToValue(role);
         Double countValue = parseCount(count);
 
+        // 校验用户是否存在
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("用户不存在"));
-        System.out.print("开始分析：");
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        // 查询24小时内零食记录
         LocalDateTime oneDayAgo = LocalDateTime.now().minusHours(24);
-        List<UserSnackRecord> recentSnacks = 
-            userSnackRecordRepository.findByUserIdAndCreateTimeAfter(userId, oneDayAgo);
+        List<UserSnackRecord> recentSnacks =
+                userSnackRecordRepository.findByUserIdAndCreateTimeAfter(userId, oneDayAgo);
 
-        Optional<SnackNutrition> snackNutrition = 
-            snackNutritionRepository.findBySnackName(snackName);
+        // 查询零食营养信息
+        Optional<SnackNutrition> snackNutrition =
+                snackNutritionRepository.findBySnackName(snackName);
 
-        String prompt = buildPrompt(user, recentSnacks, snackName, countValue, 
-                                    remark, snackNutrition.orElse(null));
+        // 构建AI提示词
+        String prompt = buildPrompt(user, recentSnacks, snackName, countValue, remark, snackNutrition.orElse(null));
 
+        // 获取AI返回结果
         String aiSuggestion;
         try {
-            aiSuggestion = getAiResponseWithCustomSystem(
-                SYSTEM_PROMPT, prompt, null, new ArrayList<>()
-            );
+            aiSuggestion = getAiResponseWithCustomSystem(SYSTEM_PROMPT, prompt, null, new ArrayList<>());
         } catch (Exception e) {
+            log.error("AI分析暂时不可用：{}", e.getMessage());
             aiSuggestion = "AI分析暂时不可用：" + e.getMessage();
         }
 
+        // ======================= 核心修改：名称和备注分开存储 =======================
         UserSnackRecord record = UserSnackRecord.builder()
-            .userId(userId)
-            .role(roleValue)
-            .snackRecordName(remark != null && !remark.isEmpty() ? remark : snackName)
-            .snackId(snackNutrition.map(SnackNutrition::getId).map(Long::valueOf).orElse(null))
-            .count(countValue)
-            .build();
-        userSnackRecordRepository.save(record);
+                .userId(userId)
+                .role(roleValue)
+                .snackName(snackName)       // 零食真实名称（单独存）
+                .remark(remark)             // 用户备注（单独存）
+                .snackId(snackNutrition.map(SnackNutrition::getId).map(Long::valueOf).orElse(null))
+                .count(countValue)
+                .build();
 
+        // 保存记录到数据库
+        userSnackRecordRepository.save(record);
+        log.info("零食记录已保存");
         return aiSuggestion;
     }
 
+    // 零食类型转换
     private Integer convertRoleToValue(String role) {
         if ("饮品".equals(role)) return 0;
         if ("袋装零食".equals(role)) return 1;
+        log.error("无效的零食类型：{}", role);
         throw new IllegalArgumentException("无效的零食类型：" + role);
     }
 
+    // 数量解析
     private Double parseCount(String count) {
         try {
             return Double.parseDouble(count);
         } catch (NumberFormatException e) {
+            log.error("无效的数量值：{}", count);
             throw new IllegalArgumentException("无效的数量值：" + count);
         }
     }
 
-    private String buildPrompt(User user, List<UserSnackRecord> recentSnacks, 
-                              String snackName, Double count, String remark,
-                              SnackNutrition nutrition) {
+    // 构建给AI的Prompt
+    private String buildPrompt(User user, List<UserSnackRecord> recentSnacks,
+                               String snackName, Double count, String remark,
+                               SnackNutrition nutrition) {
         StringBuilder prompt = new StringBuilder();
 
+        // 用户健康信息
         if (!user.getDietRestrictions().isEmpty() || !user.getDiseases().isEmpty()) {
             prompt.append("【用户健康信息】\n");
             if (!user.getDietRestrictions().isEmpty()) {
                 prompt.append("饮食限制：")
-                      .append(user.getDietRestrictions().stream()
-                          .map(DietRestriction::getName)
-                          .collect(Collectors.joining("、")))
-                      .append("\n");
+                        .append(user.getDietRestrictions().stream()
+                                .map(DietRestriction::getName)
+                                .collect(Collectors.joining("、")))
+                        .append("\n");
             }
             if (!user.getDiseases().isEmpty()) {
                 prompt.append("疾病史：")
-                      .append(user.getDiseases().stream()
-                          .map(Disease::getName)
-                          .collect(Collectors.joining("、")))
-                      .append("\n");
+                        .append(user.getDiseases().stream()
+                                .map(Disease::getName)
+                                .collect(Collectors.joining("、")))
+                        .append("\n");
             }
             prompt.append("\n");
         }
 
+        // 最近24小时零食记录
         if (!recentSnacks.isEmpty()) {
             prompt.append("【最近24小时零食记录】\n");
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd HH:mm");
             for (UserSnackRecord snack : recentSnacks) {
                 String type = snack.getRole() == 0 ? "饮品" : "零食";
                 String time = snack.getCreateTime().format(formatter);
-                prompt.append(String.format("- %s %s：%s %.1f克\n", 
-                    time, type, snack.getSnackRecordName(), snack.getCount()));
+                // ======================= 展示名称：优先显示零食名 =======================
+                prompt.append(String.format("- %s %s：%s %.1f克\n",
+                        time, type, snack.getSnackName(), snack.getCount()));
             }
             prompt.append("\n");
         }
 
+        // 当前零食信息
         prompt.append("【当前零食】\n");
         prompt.append("名称：").append(snackName).append("\n");
         prompt.append("数量：").append(count).append("克/毫升\n");
@@ -174,6 +190,7 @@ public class SnackAnalysis extends AiChat{
             prompt.append("备注：").append(remark).append("\n");
         }
 
+        // 营养数据
         if (nutrition != null) {
             prompt.append("\n【营养数据（每100克）】\n");
             prompt.append(String.format("能量：%.2f kJ\n", nutrition.getEnergy()));

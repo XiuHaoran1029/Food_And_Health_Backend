@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-100 px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
+    <header class="bg-white border-b border-gray-100 px-4 pt-5 py-3 flex items-center shadow-sm sticky top-0 z-10">
       <button
           class="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
           @click="goBack"

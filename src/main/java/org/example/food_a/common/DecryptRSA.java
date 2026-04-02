@@ -1,5 +1,6 @@
 package org.example.food_a.common;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import javax.crypto.Cipher;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 
+@Slf4j  // 自动生成 log 对象
 @Component
 public class DecryptRSA {
 
@@ -32,6 +34,7 @@ public class DecryptRSA {
 
     public static String decryptRSA(String encryptedStr) throws Exception {
         if (encryptedStr == null || encryptedStr.trim().isEmpty()) {
+            log.error("RSA解密异常：密码不能为空");
             throw new IllegalArgumentException("密码不能为空");
         }
 
@@ -56,7 +59,7 @@ public class DecryptRSA {
 
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("RSA解密异常：{}", e.getMessage());
             throw new RuntimeException("RSA 解密失败：密钥不匹配或密码错误");
         }
     }

@@ -20,23 +20,25 @@ create table disease
 
 create table snack_nutrition
 (
-    id            int auto_increment comment '主键ID，自增唯一标识'
+    id             int auto_increment comment '主键ID，自增唯一标识'
         primary key,
-    snack_name    varchar(255)                       not null comment '零食名称，如：原味薯片、牛奶巧克力、手撕面包',
-    energy        decimal(8, 2)                      not null comment '能量，单位：千焦(kJ)【食品标签通用单位】',
-    protein       decimal(6, 2)                      null comment '蛋白质含量，单位：克(g)/100克',
-    fat           decimal(6, 2)                      null comment '脂肪含量，单位：克(g)/100克',
-    fat_saturated decimal(6, 2)                      null comment '饱和脂肪，单位：克(g)/100克（可选，常见于加工零食）',
-    carbohydrate  decimal(6, 2)                      null comment '碳水化合物，单位：克(g)/100克',
-    sugar         decimal(6, 2)                      null comment '糖含量，单位：克(g)/100克（含添加糖+天然糖）',
-    sodium        int                                null comment '钠含量，单位：毫克(mg)/100克（食品标签通用低单位）',
-    dietary_fiber decimal(6, 2)                      null comment '膳食纤维，单位：克(g)/100克（粗粮/代餐零食常用）',
-    create_time   datetime default CURRENT_TIMESTAMP not null comment '创建时间，自动生成',
-    update_time   datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间，修改时自动刷新',
+    snack_name     varchar(255)                       not null comment '零食名称，如：原味薯片、牛奶巧克力、手撕面包',
+    energy         decimal(8, 2)                      not null comment '能量，单位：千焦(kJ)【食品标签通用单位】',
+    protein        decimal(6, 2)                      null comment '蛋白质含量，单位：克(g)/100克',
+    fat            decimal(6, 2)                      null comment '脂肪含量，单位：克(g)/100克',
+    fat_saturated  decimal(6, 2)                      null comment '饱和脂肪，单位：克(g)/100克（可选，常见于加工零食）',
+    carbohydrate   decimal(6, 2)                      null comment '碳水化合物，单位：克(g)/100克',
+    sugar          decimal(6, 2)                      null comment '糖含量，单位：克(g)/100克（含添加糖+天然糖）',
+    sodium         int                                null comment '钠含量，单位：毫克(mg)/100克（食品标签通用低单位）',
+    dietary_fiber  decimal(6, 2)                      null comment '膳食纤维，单位：克(g)/100克（粗粮/代餐零食常用）',
+    create_time    datetime default CURRENT_TIMESTAMP not null comment '创建时间，自动生成',
+    update_time    datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间，修改时自动刷新',
+    embedding      longblob                           null comment '向量嵌入(1024维float数组序列化)',
+    embedding_text text                               null comment '用于生成嵌入的文本描述',
     constraint uk_snack_name
         unique (snack_name) comment '零食名称唯一索引，避免重复录入同款零食'
 )
-    comment '零食营养数据表' collate = utf8mb3_general_ci;
+    comment '零食营养数据表' charset = utf8mb3;
 
 create index idx_update_time
     on snack_nutrition (update_time)
@@ -50,7 +52,7 @@ create table user
     password    varchar(200) not null comment '密码',
     email       varchar(50)  not null comment '邮箱',
     create_time datetime     not null comment '创建时间',
-    avatar_url  varchar(512) not null comment '头像图片地址'
+    avatar_url  varchar(512) null comment '头像图片地址'
 )
     comment '用户表';
 
@@ -180,17 +182,18 @@ create index idx_user_id
 
 create table user_snack_record
 (
-    id                bigint auto_increment comment '主键ID，自增唯一标识'
+    id          bigint auto_increment comment '主键ID，自增唯一标识'
         primary key,
-    user_id           bigint                                 not null comment '用户ID，关联用户表主键，和三餐/零食表保持一致',
-    role              tinyint(1)                             not null comment '饮品==0，袋装零食==1',
-    snack_record_name varchar(255) default ''                not null comment '零食记录备注名，如：下午加餐薯片、追剧吃坚果（自定义）',
-    snack_id          bigint                                 null comment '关联零食营养表主键ID，通用零食填此值，自定义零食留NULL',
-    count             double       default 0                 not null comment '食用量，单位：克(g/ml)（推荐），支持小数如25.5g，精准统计',
-    create_time       datetime     default CURRENT_TIMESTAMP not null comment '记录创建时间，自动生成',
-    update_time       datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '记录更新时间，修改自动刷新'
+    user_id     bigint                                 not null comment '用户ID，关联用户表主键，和三餐/零食表保持一致',
+    role        tinyint(1)                             not null comment '饮品==0，袋装零食==1',
+    remark      varchar(255) default ''                not null comment '零食记录备注名，如：下午加餐薯片、追剧吃坚果（自定义）',
+    snack_id    bigint                                 null comment '关联零食营养表主键ID，通用零食填此值，自定义零食留NULL',
+    count       double       default 0                 not null comment '食用量，单位：克(g/ml)（推荐），支持小数如25.5g，精准统计',
+    create_time datetime     default CURRENT_TIMESTAMP not null comment '记录创建时间，自动生成',
+    update_time datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '记录更新时间，修改自动刷新',
+    snack_name  varchar(255)                           not null comment '零食名称'
 )
-    comment '用户零食食用记录表' collate = utf8mb3_general_ci;
+    comment '用户零食食用记录表' charset = utf8mb3;
 
 create index idx_snack_id
     on user_snack_record (snack_id)

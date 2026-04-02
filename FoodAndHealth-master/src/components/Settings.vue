@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-100 px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
+    <header class="bg-white border-b border-gray-100 px-4 pt-5 py-3 flex items-center shadow-sm sticky top-0 z-10">
       <button 
         class="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
         @click="goBack"
@@ -87,7 +87,7 @@
                 v-model="newDisease"
                 type="text"
                 class="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                placeholder="添加患病名称（按回车）"
+                placeholder="添加患病名称（点击加号）"
                 @keydown.enter.prevent="addDisease"
               />
               <button
@@ -128,7 +128,7 @@
     v-model="newTaboo"
     type="text"
     class="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-all transition-all"
-    placeholder="添加忌口（按回车）"
+    placeholder="添加忌口（点击加号）"
     @keydown.enter.prevent="addTaboo"
   />
   <button
@@ -163,7 +163,7 @@
           <button
             type="button"
             class="w-full py-3.5 bg-white text-gray-700 border border-gray-200 rounded-xl font-bold shadow-sm hover:bg-gray-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            @click="showPasswordModal = true"
+            @click="openPasswordModal"
           >
             <Lock size="18" />
             修改密码
@@ -194,7 +194,7 @@
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" @click="showPasswordModal = false"></div>
         
         <!-- Modal Content -->
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative z-10 animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative z-10 animate-in fade-in zoom-in-95 duration-200 max-h-[calc(100vh-2rem)] overflow-y-auto">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold text-gray-800">修改密码</h3>
             <button class="text-gray-400 hover:text-gray-600 transition-colors" @click="showPasswordModal = false">
@@ -249,7 +249,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Camera, User, UserCircle, Lock, Plus, X, LogOut } from 'lucide-vue-next'
 import { showToast } from 'vant'
@@ -277,8 +277,62 @@ const passwordForm = ref({
   confirmPassword: ''
 })
 
+const lockedScrollY = ref(0)
+
+const lockPageScroll = () => {
+  if (typeof window === 'undefined') return
+
+  lockedScrollY.value = window.scrollY || window.pageYOffset || 0
+  const body = document.body
+  const html = document.documentElement
+
+  body.style.position = 'fixed'
+  body.style.top = `-${lockedScrollY.value}px`
+  body.style.left = '0'
+  body.style.right = '0'
+  body.style.width = '100%'
+  body.style.overflow = 'hidden'
+  html.style.overflow = 'hidden'
+}
+
+const unlockPageScroll = () => {
+  if (typeof window === 'undefined') return
+
+  const body = document.body
+  const html = document.documentElement
+
+  body.style.position = ''
+  body.style.top = ''
+  body.style.left = ''
+  body.style.right = ''
+  body.style.width = ''
+  body.style.overflow = ''
+  html.style.overflow = ''
+
+  window.scrollTo(0, lockedScrollY.value)
+}
+
 const avatarFile = ref(null)
 const avatarPreviewUrl = ref('')
+
+const openPasswordModal = () => {
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }
+
+  showPasswordModal.value = true
+}
+
+watch(showPasswordModal, (visible) => {
+  if (visible) {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    }
+    lockPageScroll()
+  } else {
+    unlockPageScroll()
+  }
+})
 
 onMounted(async () => {
   try {
@@ -455,6 +509,7 @@ const handleLogout = () => {
 }
 
 onUnmounted(() => {
+  unlockPageScroll()
   if (avatarPreviewUrl.value && avatarPreviewUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(avatarPreviewUrl.value)
   }

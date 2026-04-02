@@ -14,7 +14,7 @@
         <div class="w-20 h-20 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center text-primary">
           <UserCircle size="48" />
         </div>
-        <h2 class="text-2xl font-bold text-gray-800">AAA助手</h2>
+        <h2 class="text-2xl font-bold text-gray-800">时康日记</h2>
         <p class="text-gray-500 mt-2">{{ mode === 'login' ? '欢迎回来，请登录您的账户' : '创建一个新账户开始使用' }}</p>
       </div>
 
@@ -239,7 +239,7 @@ const handleLogin = async () => {
     })
 
     console.log(res)
-    localStorage.setItem('token', res.data.token);
+    userStore.setToken(res.data.token)
 
     showToast('登录成功')
     router.push('/')
@@ -248,7 +248,7 @@ const handleLogin = async () => {
       showToast('系统安全组件异常，请联系管理员')
     } else {
       const msg = error?.message || error?.msg || '登录失败，请检查邮箱和密码'
-      showToast(msg)
+      showToast('登录失败，请检查邮箱和密码')
     }
   }
 }

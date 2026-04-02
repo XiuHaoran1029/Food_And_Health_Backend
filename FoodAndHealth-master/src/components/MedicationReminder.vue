@@ -1,8 +1,10 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, X, Pill, Calendar, Clock, Check } from 'lucide-vue-next'
+import { ArrowLeft, X, Pill, Calendar as CalendarIcon, Clock, Check } from 'lucide-vue-next'
+import { Capacitor } from '@capacitor/core'
 import { showToast } from 'vant'
+import { CapacitorCalendar } from '@ebarooni/capacitor-calendar'
 
 import WheelDatePicker from './WheelDatePicker.vue'
 import { sendMedicineRecord } from '@/api/medicine'
@@ -26,9 +28,25 @@ const touched = ref({
 })
 
 const commonMedicines = [
-  '阿莫西林', '头孢克肟', '布洛芬', '对乙酰氨基酚', '奥美拉唑',
-  '氯雷他定', '西替利嗪', '甲硝唑', '蒙脱石散', '维生素C',
-  '复方甘草片', '氨溴索', '阿昔洛韦', '二甲双胍', '阿托伐他汀'
+  ' 左氧氟沙星 ', ' 阿奇霉素 ', ' 罗红霉素 ', ' 克林霉素 ', ' 诺氟沙星 ',
+  ' 双氯芬酸钠 ', ' 洛索洛芬钠 ', ' 萘普生 ', ' 美洛昔康 ', ' 塞来昔布 ',
+  ' 兰索拉唑 ', ' 泮托拉唑 ', ' 雷贝拉唑 ', ' 铝碳酸镁 ', ' 硫糖铝 ',
+  ' 依巴斯汀 ', ' 地氯雷他定 ', ' 孟鲁司特 ', ' 布地奈德 ', ' 沙丁胺醇 ',
+  ' 替硝唑 ', ' 呋喃唑酮 ', ' 黄连素 ', ' 双歧杆菌 ', ' 乳酶生 ',
+  ' 维生素 B 族 ', ' 维生素 E', ' 碳酸钙 D3', ' 葡萄糖酸钙 ', ' 氯化钾 ',
+  ' 右美沙芬 ', ' 乙酰半胱氨酸 ', ' 羧甲司坦 ', ' 愈创甘油醚 ', ' 福尔可定 ',
+  ' 利巴韦林 ', ' 奥司他韦 ', ' 金刚烷胺 ', ' 伐昔洛韦 ', ' 泛昔洛韦 ',
+  ' 格列齐特 ', ' 格列美脲 ', ' 瑞格列奈 ', ' 阿卡波糖 ', ' 伏格列波糖 ',
+  ' 瑞舒伐他汀 ', ' 辛伐他汀 ', ' 普伐他汀 ', ' 氟伐他汀 ', ' 非诺贝特 ',
+  ' 氨氯地平 ', ' 硝苯地平 ', ' 左旋氨氯地平 ', ' 非洛地平 ', ' 拉西地平 ',
+  ' 美托洛尔 ', ' 比索洛尔 ', ' 阿替洛尔 ', ' 卡维地洛 ', ' 拉贝洛尔 ',
+  ' 依那普利 ', ' 贝那普利 ', ' 赖诺普利 ', ' 雷米普利 ', ' 福辛普利 ',
+  ' 氯沙坦 ', ' 缬沙坦 ', ' 厄贝沙坦 ', ' 替米沙坦 ', ' 奥美沙坦 ',
+  ' 呋塞米 ', ' 氢氯噻嗪 ', ' 螺内酯 ', ' 托拉塞米 ', ' 吲达帕胺 ',
+  ' 阿司匹林 ', ' 氯吡格雷 ', ' 替格瑞洛 ', ' 华法林 ', ' 利伐沙班 ',
+  ' 二甲硅油 ', ' 多潘立酮 ', ' 莫沙必利 ', ' 伊托必利 ', ' 甲氧氯普胺 ',
+  ' 地衣芽孢杆菌 ', ' 布拉氏酵母菌 ', ' 复方嗜酸乳杆菌 ', ' 酪酸梭菌 ', ' 谷氨酰胺 ',
+  ' 苯海拉明 ', ' 异丙嗪 ', ' 赛庚啶 ', ' 酮替芬 ', ' 氯苯那敏 '
 ]
 
 const suggestionsOpen = ref(false)
@@ -36,6 +54,7 @@ const suggestionsLoading = ref(false)
 const medicineFocused = ref(false)
 
 const showDatePopup = ref(false)
+const isSaving = ref(false)
 
 const todayStr = computed(() => {
   const d = new Date()
@@ -159,53 +178,115 @@ function onDateConfirm(dateStr) {
   showDatePopup.value = false
 }
 
+const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms))
+
+function toTimestamp(dateLike) {
+  const date = dateLike instanceof Date ? dateLike : new Date(dateLike)
+  return date.getTime()
+}
+
+async function ensureCalendarPermission() {
+  if (!Capacitor.isNativePlatform()) {
+    showToast('请在手机端使用日历提醒功能')
+    return false
+  }
+
+  try {
+    const current = await CapacitorCalendar.checkPermission({ scope: 'writeCalendar' })
+    if (current.result === 'granted') return true
+
+    const requested = await CapacitorCalendar.requestFullCalendarAccess()
+    return requested.result === 'granted'
+  } catch (error) {
+    console.error('申请日历权限失败:', error)
+    showToast('日历权限申请失败，请检查系统权限设置')
+    return false
+  }
+}
+
+async function syncMedicationReminderToCalendar() {
+  const hasPermission = await ensureCalendarPermission()
+  if (!hasPermission) return false
+
+  const startDate = new Date()
+  const endDate = new Date(startDate.getTime() + 5 * 60 * 1000)
+  const reminderEnd = new Date(`${form.value.stopTime}T23:59:59`)
+
+  await CapacitorCalendar.createEvent({
+    title: `💊 服用 ${form.value.medicineName}`,
+    description: `每日 ${form.value.takeTimes} 次，每次 ${form.value.singleDosage} 粒，截止 ${form.value.stopTime}`,
+    startDate: toTimestamp(startDate),
+    endDate: toTimestamp(endDate),
+    alerts: [-5, 0],
+    recurrence: {
+      frequency: 'daily',
+      interval: 1,
+      end: toTimestamp(reminderEnd)
+    }
+  })
+
+  return true
+}
+
 async function onSave() {
+  if (isSaving.value) return
   if (!userStore.userId) {
-    showToast('请先登录')
-    return
+    showToast('请先登录');
+    return;
   }
+  touched.value = { medicineName: true, takeTimes: true, singleDosage: true, stopTime: true };
+  if (!canSave.value) return;
 
-  touched.value = {
-    medicineName: true,
-    takeTimes: true,
-    singleDosage: true,
-    stopTime: true
-  }
+  isSaving.value = true
 
-  if (!canSave.value) return
-
-  const payload = {
-    ...form.value,
-    takeTimes: Number(form.value.takeTimes),
-    singleDosage: Number(form.value.singleDosage),
-    createdAt: new Date().toISOString()
-  }
-
+  // --- 1. 本地与网络保存 (保持原有逻辑) ---
   try {
-    const key = 'medicationPlans'
-    const current = JSON.parse(localStorage.getItem(key) || '[]')
-    const next = Array.isArray(current) ? [...current, payload] : [payload]
-    localStorage.setItem(key, JSON.stringify(next))
-  } catch {
-    // ignore storage errors
-  }
-
-  try {
-
-    await sendMedicineRecord({
-      userId: userStore.userId,
-      medicineName: form.value.medicineName,
+    const payload = {
+      ...form.value,
       takeTimes: Number(form.value.takeTimes),
       singleDosage: Number(form.value.singleDosage),
-      stopTime: form.value.stopTime
-    })
-    console.log("发送消息")
-  } catch (err) {
-    console.error('Save failed', err)
-  }
+      createdAt: new Date().toISOString()
+    };
 
-  showToast('添加成功')
-  goBack()
+    try {
+      const key = 'medicationPlans';
+      const current = JSON.parse(localStorage.getItem(key) || '[]');
+      const next = Array.isArray(current) ? [...current, payload] : [payload];
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch (e) {
+      console.warn('LocalStorage save failed', e);
+    }
+
+    try {
+      await sendMedicineRecord({
+        userId: userStore.userId,
+        medicineName: form.value.medicineName,
+        takeTimes: Number(form.value.takeTimes),
+        singleDosage: Number(form.value.singleDosage),
+        stopTime: form.value.stopTime
+      });
+    } catch (err) {
+      console.error('API Save failed', err);
+    }
+
+    // --- 2. 写入系统日历提醒 ---
+    const synced = await syncMedicationReminderToCalendar()
+    if (synced) {
+      showToast('添加成功，已同步日历提醒')
+    } else {
+      showToast('添加成功，但未同步日历提醒')
+    }
+    await sleep(700)
+    goBack();
+  } catch (calendarError) {
+    // 即使日历失败，也不阻断主流程，但要提示用户
+    console.error('日历写入失败:', calendarError);
+    showToast('添加成功，但未写入系统日历');
+    await sleep(700)
+    goBack();
+  } finally {
+    isSaving.value = false
+  }
 }
 
 watch(
@@ -227,7 +308,7 @@ watch(
 <template>
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-100 px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
+    <header class="bg-white border-b border-gray-100 px-4 pt-5 py-3 flex items-center shadow-sm sticky top-0 z-10">
       <button
           class="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
           @click="goBack"
@@ -364,7 +445,7 @@ watch(
             ]"
               @click="openDatePicker"
           >
-            <Calendar size="18" class="text-gray-400 mr-3 shrink-0" />
+            <CalendarIcon size="18" class="text-gray-400 mr-3 shrink-0" />
             <span
                 class="flex-1 text-gray-800"
                 :class="!form.stopTime ? 'text-gray-400' : ''"
@@ -388,11 +469,11 @@ watch(
       <button
           type="button"
           class="w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:shadow-none disabled:active:scale-100 flex items-center justify-center gap-2"
-          :disabled="!canSave"
+          :disabled="!canSave || isSaving"
           @click="onSave"
       >
         <Check size="20" />
-        保存计划
+        {{ isSaving ? '保存中...' : '保存计划' }}
       </button>
 
       <!-- Safe Area -->

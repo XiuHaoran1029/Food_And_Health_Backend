@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { MessageSquarePlus, MessageSquare, User, Trash2 } from 'lucide-vue-next'
+import { MessageSquarePlus, MessageSquare, User, Trash2, CalendarDays } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { getConversationList, createConversation, deleteConversation } from '@/api/conversation'
@@ -9,7 +9,14 @@ import { useUserStore } from '@/store/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-const emit = defineEmits(['select-conversation'])
+const props = defineProps({
+  activeConversationId: {
+    type: [Number, String],
+    default: null
+  }
+})
+
+const emit = defineEmits(['select-conversation', 'conversations-loaded'])
 
 const conversations = ref([])
 
@@ -30,9 +37,8 @@ async function loadConversations() {
     // 3. 如果 res.data 本身就是数组，则使用 res.data
     // 4. 否则默认为空数组
 
-    const list = res.data?.content || res.data?.records || (Array.isArray(res.data) ? res.data : [])
-
-    conversations.value = list
+    conversations.value = res.data?.content || res.data?.records || (Array.isArray(res.data) ? res.data : [])
+    emit('conversations-loaded', conversations.value)
 
     console.log('Processed List:', conversations.value) // 确认这里确实是 []
 
@@ -40,8 +46,11 @@ async function loadConversations() {
     if (conversations.value.length === 0) {
       await handleNewConversation()
     } else {
-      // 如果有对话，自动选择第一个对话
-      emit('select-conversation', conversations.value[0].id)
+      // 如果有对话，优先选择路由/父组件当前指定的对话
+      const matchedConv = conversations.value.find(
+        conv => String(conv.id) === String(props.activeConversationId)
+      )
+      emit('select-conversation', matchedConv || conversations.value[0])
     }
   } catch (e) {
     showToast(e.message || '加载对话列表失败')
@@ -70,7 +79,8 @@ async function handleNewConversation() {
 
     const newConv = res.data;
     conversations.value.unshift(newConv);
-    emit('select-conversation', newConv.id);
+    emit('conversations-loaded', conversations.value)
+    emit('select-conversation', newConv);
   } catch (e) {
     showToast(e.message || '创建对话失败');
   }
@@ -87,12 +97,14 @@ async function handleDeleteConversation(conv, event) {
 }
 
 function handleSelectConversation(conv) {
-  emit('select-conversation', conv.id)
+  emit('select-conversation', conv)
 }
 
 const handleClick = (buttonText) => {
   if (buttonText === 'Settings') {
     router.push({ name: 'Settings' })
+  } else if (buttonText === 'MealCalendar') {
+    router.push({ name: 'MealCalendar' })
   }
 }
 </script>
@@ -100,11 +112,13 @@ const handleClick = (buttonText) => {
 <template>
   <div class="w-64 h-full bg-white border-r border-gray-200 flex flex-col shrink-0 shadow-sm">
     <!-- Logo -->
-    <div class="h-16 flex items-center px-4 border-b border-gray-100">
-      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold mr-2 shadow-sm">
-        A
-      </div>
-      <span class="text-xl font-bold text-gray-800">AAA</span>
+    <div class="h-16 pt-5 flex items-center px-4 border-b border-gray-100">
+      <img
+          src="/logo.png"
+          alt="Logo"
+          class="w-8 h-8 rounded-lg mr-2 shadow-sm object-cover"
+      >
+      <span class="text-xl font-bold text-gray-800">时康日记</span>
     </div>
 
     <!-- New Chat Button -->
@@ -146,6 +160,10 @@ const handleClick = (buttonText) => {
         <button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" @click="handleClick('Settings')">
             <User :size="18" class="text-gray-500" />
             <span>我的空间</span>
+        </button>
+        <button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" @click="handleClick('MealCalendar')">
+            <CalendarDays :size="18" class="text-gray-500" />
+            <span>三餐日历</span>
         </button>
     </div>
   </div>

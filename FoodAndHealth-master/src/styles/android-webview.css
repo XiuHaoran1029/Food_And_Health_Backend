@@ -43,8 +43,8 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 防止页面滚动时的闪烁 */
-body {
+/* 防止页面滚动时的闪烁：避免给 body 本身加 transform，否则会影响 fixed 的 toast/弹层定位 */
+#app {
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
 }

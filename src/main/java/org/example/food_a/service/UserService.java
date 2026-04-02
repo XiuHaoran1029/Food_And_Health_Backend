@@ -1,6 +1,7 @@
 package org.example.food_a.service;
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.common.ImageSaver;
 import org.example.food_a.entity.DietRestriction;
 import org.example.food_a.entity.Disease;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserService {
     UserRepository userRepository;
@@ -48,6 +50,7 @@ public class UserService {
 
         // 验证密码
         if (!Objects.equals(password, user.getPassword())) {
+            log.error("登录失败：邮箱或密码错误");
             throw new RuntimeException("邮箱或密码错误");
         }
 
@@ -62,12 +65,14 @@ public class UserService {
 
         // 验证邮箱是否已注册
         if (userRepository.existsByEmail(user.getEmail())) {
+            log.error("注册失败：邮箱已存在");
             throw new RuntimeException("邮箱已存在");
         }
 
         // 设置创建时间
         user.setCreateTime(LocalDateTime.now());
         User savedUser = userRepository.save(user);
+        log.info("用户注册完成");
         return user;
     }
 
@@ -98,9 +103,11 @@ public class UserService {
             }
         }
 
+
         // 更新用户关联
         settingUser.getDietRestrictions().clear();
         settingUser.getDietRestrictions().addAll(newRestrictions);
+        log.info("用户忌口更新完成：{}",newRestrictions);
 
         // ===================== 处理疾病 sick（已改为 List）=====================
         List<Disease> newDisease = new ArrayList<>();
@@ -126,6 +133,7 @@ public class UserService {
         settingUser.getDiseases().clear();
         settingUser.getDiseases().addAll(newDisease);
 
+        log.info("用户疾病更新完成：{}",newDisease);
         // ===================== 头像处理 =====================
         String avatar;
         if (img == null || img.isEmpty()) {
@@ -134,6 +142,7 @@ public class UserService {
             try {
                 avatar = saveAvatar(img, userid, avatarPath);
             } catch (IOException e) {
+                log.error("头像保存失败:{}",e.getMessage());
                 throw new RuntimeException("头像保存失败", e);
             }
             settingUser.setAvatarUrl(avatar);
@@ -146,7 +155,8 @@ public class UserService {
         map.put("img",webPath+"/avatar/"+avatar);  // 修复：返回真实保存的头像路径
         map.put("sick", sick);
         map.put("taboo", taboo);
-        System.out.println(map);
+
+        log.info("用户信息更新完成：{}",map);
         return map;
     }
 
@@ -173,6 +183,7 @@ public class UserService {
         map.put("username", userName);
         map.put("userId", userId);
 
+        log.info("用户信息获取完成：{}",map);
         return map;
 
     }
@@ -182,6 +193,7 @@ public class UserService {
                 .orElseThrow(()->new RuntimeException("未发现用户"));
         if(oldPassword.equals(newPassword)) return false;
         user.setPassword(newPassword);
+        userRepository.save(user);
         return true;
     }
 

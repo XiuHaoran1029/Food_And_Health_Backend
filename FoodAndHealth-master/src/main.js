@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { setToastDefaultOptions } from 'vant'
+import 'vant/es/toast/style'
 import './style.css'
 import './styles/android-webview.css' // 引入Android WebView优化样式
 import App from './App.vue'
@@ -13,7 +14,8 @@ app.use(router)
 
 setToastDefaultOptions({
     position: 'middle',
-    className: 'app-toast'
+    className: 'app-toast',
+    zIndex: 99999
 })
 
 app.mount('#app')

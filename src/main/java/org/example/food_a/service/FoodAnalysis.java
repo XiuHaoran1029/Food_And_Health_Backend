@@ -3,6 +3,7 @@ package org.example.food_a.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.entity.DietRestriction;
 import org.example.food_a.entity.Disease;
 import org.example.food_a.entity.User;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FoodAnalysis extends AiChat {
@@ -118,6 +120,7 @@ public class FoodAnalysis extends AiChat {
                 try {
                     imageUrl = saveMealImage(imageBase64, userId, mealType, imgPath);
                 } catch (IOException e) {
+                    log.error("图片保存失败：{}", e.getMessage());
                     throw new Exception("图片保存失败：" + e.getMessage(), e);
                 }
             } else {
@@ -161,7 +164,6 @@ public class FoodAnalysis extends AiChat {
                         .append("\n");
             }
             prompt.append("\n");
-            System.out.print(prompt.toString());
         }
 
         if (historyMeals != null && !historyMeals.isEmpty()) {

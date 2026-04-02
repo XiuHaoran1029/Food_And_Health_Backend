@@ -1,10 +1,12 @@
 package org.example.food_a.common;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
@@ -13,7 +15,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+@Slf4j  // 自动生成 log 对象
 public class ImageSaver {
 
     // 图片格式映射
@@ -32,8 +34,17 @@ public class ImageSaver {
 
     // ==================== 1. 保存用户头像（自动识别格式，返回文件名）====================
     public static String saveAvatar(String base64Image, Long userId, String targetDir) throws IOException {
+
+        log.info("接收到用户头像，正在保存");
+
         if (!StringUtils.hasText(base64Image)) {
             return "empty.jpg";
+        }
+
+        // ========== 【关键修复】如果是 http 地址，直接返回，不解析 ==========
+        if (base64Image.startsWith("http")) {
+            log.info("检测为URL格式，直接返回");
+            return new File(base64Image).getName();
         }
 
         // 解析格式 + 纯base64
@@ -50,7 +61,7 @@ public class ImageSaver {
 
         // 写入（覆盖）
         Files.write(filePath, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-
+        log.info("头像文件已保存");
         // 返回 文件名 → 存入数据库
         return fileName;
     }
@@ -58,7 +69,14 @@ public class ImageSaver {
     // ==================== 2. 保存餐食图片（返回文件名）====================
     public static String saveMealImage(String base64Image, Long userId, Byte mealType, String targetDir) throws IOException {
         if (!StringUtils.hasText(base64Image)) {
+            log.error("餐食图片保存异常：图片不能为空");
             throw new IOException("图片不能为空");
+        }
+
+        // ========== 【关键修复】如果是 http 地址，直接返回 ==========
+        if (base64Image.startsWith("http")) {
+            log.info("检测为URL格式，直接返回");
+            return new File(base64Image).getName();
         }
 
         Base64Info info = parseBase64(base64Image);
@@ -84,7 +102,7 @@ public class ImageSaver {
 
         File file = new File(imagePath);
         if (!file.exists()) {
-            System.err.println("图片不存在：" + imagePath);
+            log.error("图片不存在：{}", imagePath);
             return imagePath;
         }
 
@@ -94,7 +112,7 @@ public class ImageSaver {
             String mime = getMimeType(imagePath);
             return "data:" + mime + ";base64," + base64;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             return imagePath;
         }
     }

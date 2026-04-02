@@ -45,6 +45,10 @@ const props = defineProps({
   conversationId: {
     type: Number,
     default: null
+  },
+  conversationTitle: {
+    type: String,
+    default: ''
   }
 })
 
@@ -103,14 +107,18 @@ function scrollToBottom() {
 // 加载消息
 async function loadMessages(conversationId) {
   console.log('[loadMessages] conversationId:', conversationId)
-  
+
   if (!conversationId || conversationId <= 0) {
-    console.error('[loadMessages] Invalid conversationId:', conversationId)
-    showToast('请选择有效的对话')
     messages.value = []
     return
   }
-  
+
+  if (!userStore.userId) {
+    console.warn('[loadMessages] userId not ready yet, skip loading messages')
+    messages.value = []
+    return
+  }
+
   clearAllStreaming() // 切换会话必须清空旧流
   stopWaiting() // 停止等待动画
   messages.value = []
@@ -252,101 +260,130 @@ function onMessageSent(msg) {
 defineExpose({appendMessage, startWaiting, stopWaiting, onMessageSent})
 
 watch(() => props.conversationId, (newId) => {
-  loadMessages(newId)
+  if (newId) {
+    loadMessages(newId)
+  } else {
+    messages.value = []
+  }
 }, { immediate: true })
 </script>
 
 <template>
   <div class="flex flex-col h-full relative">
-    <!-- 头部菜单 -->
-    <div class="absolute top-0 left-0 p-4 z-10 md:hidden">
+    <!-- 移动端顶部栏：菜单按钮与标题同排，避免遮挡 -->
+    <div class="md:hidden shrink-0 flex items-center gap-3 px-3 pt-5 pb-2 border-b border-gray-200 bg-white/95 backdrop-blur-sm z-10">
       <button
-          @click="handleMenuClick"
-          class="menu-button p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors select-none"
-          style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
+        @click="handleMenuClick"
+        class="menu-button flex-shrink-0 p-2 -ml-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors select-none"
+        style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
+        aria-label="打开侧边栏"
       >
-        <Menu :size="24" />
+        <Menu :size="22" />
       </button>
+
+      <div class="min-w-0 flex-1">
+        <p class="text-[10px] uppercase tracking-wider text-gray-400 leading-none mb-1 pt-3">当前对话</p>
+        <h2 class="text-base font-semibold text-gray-800 truncate">
+          {{ conversationTitle || '未命名对话' }}
+        </h2>
+      </div>
     </div>
 
-    <!-- 消息区域 -->
-    <div
+    <div class="flex-1 flex flex-col min-h-0">
+      <!-- 桌面端标题栏 -->
+      <div v-if="conversationId" class="hidden md:block shrink-0 px-4 pt-6 pb-3 border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-wider text-gray-400 mb-1">当前对话</p>
+          <h2 class="text-lg font-semibold text-gray-800 truncate">
+            {{ conversationTitle || '未命名对话' }}
+          </h2>
+        </div>
+      </div>
+
+      <!-- 消息区域 -->
+      <div
         ref="messagesContainer"
-        class="flex-1 overflow-y-auto px-4 pt-16 pb-2 space-y-4"
-    >
-      <!-- 空状态 -->
-      <div v-if="!conversationId || messages.length === 0" class="flex flex-col items-center justify-center h-full">
-        <div class="text-center mb-12">
-          <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white font-bold text-3xl mx-auto mb-6 shadow-lg shadow-primary/30">
-            A
-          </div>
-          <h1 class="text-2xl font-bold text-gray-800 mb-2">你好，我是AAA</h1>
-          <p class="text-gray-500">我可以帮你写代码、解答问题、激发灵感</p>
-        </div>
-      </div>
-
-      <!-- 消息列表 -->
-      <template v-else>
-        <div v-for="msg in messages" :key="msg.id" class="flex"
-        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
-        >
-        <!-- AI头像 -->
-        <div v-if="msg.role !== 'user'" class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm mr-2 shrink-0 self-end">
-          A
-        </div>
-
-        <div
-            class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm"
-            :class="msg.role === 'user'
-              ? 'bg-primary text-white rounded-br-sm'
-              : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'"
-        >
-          <img v-if="msg.img && msg.role === 'user'" :src="msg.img" class="max-w-full rounded-lg mb-2" />
-
-          <div class="message-content prose prose-sm max-w-none" :class="msg.role === 'user' ? 'prose-invert' : ''">
-            <template v-if="msg.role === 'user'">
-              {{ msg.content }}
-            </template>
-            <template v-else>
-              <div v-html="md.render(msg.displayContent || '')"></div>
-              <span v-if="msg.isStreaming" class="inline-block w-2 h-4 ml-1 align-middle bg-gray-400 animate-pulse"></span>
-            </template>
+        class="flex-1 overflow-y-auto px-3 sm:px-4 pb-2 space-y-4 pt-3 md:pt-4"
+      >
+        <!-- 空状态 -->
+        <div v-if="!conversationId || messages.length === 0" class="flex flex-col items-center justify-center h-full">
+          <div class="text-center mb-12">
+            <img
+                src="../../public/logo.png"
+                alt="Logo"
+                class="w-16 h-16 rounded-2xl object-cover mx-auto mb-6 shadow-lg shadow-primary/30"
+            >
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">你好，我是康康</h1>
+            <p class="text-gray-500">我可以帮你分析健康问题，助力生活美满</p>
           </div>
         </div>
-    </div>
 
-    <!-- Typing Indicator 等待动画 -->
-    <div v-if="isWaiting" class="flex w-full justify-start animate-message-in">
-      <div class="flex max-w-[99%] md:max-w-[75%] lg:max-w-[70%] flex-row">
-        <div class="flex-shrink-0">
-          <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm mr-1.5 border border-gray-200 shadow-sm">
-            A
-          </div>
-        </div>
-        <div class="flex flex-col min-w-0 items-start">
-          <div class="text-[10px] font-bold text-gray-600 mb-1 select-none px-1.5 py-0.5 rounded-md bg-white/50 backdrop-blur-sm border border-white/20 w-fit shadow-sm mr-auto ml-1 truncate max-w-[150px] md:max-w-[250px]">
-            AAA
-          </div>
-          <div class="min-w-[4rem] min-h-[4rem] px-3 py-3 rounded-2xl bg-white border border-gray-100 shadow-card flex flex-col items-center justify-center gap-2">
-            <div class="typing-indicator scale-125">
-              <span class="bg-primary-400"></span>
-              <span class="bg-primary-400"></span>
-              <span class="bg-primary-400"></span>
+        <!-- 消息列表 -->
+        <template v-else>
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            class="flex"
+            :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+          >
+            <!-- AI头像 -->
+            <div v-if="msg.role !== 'user'" class="mr-2 shrink-0 self-end">
+              <img src="/logo.png" alt="AI" class="w-8 h-8 rounded-full object-cover">
             </div>
-            <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 animate-pulse mt-0.5">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <span class="whitespace-nowrap">{{ waitTime }}s</span>
+
+            <div
+              class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm"
+              :class="msg.role === 'user'
+                ? 'bg-primary text-white rounded-br-sm'
+                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'"
+            >
+              <img v-if="msg.img && msg.role === 'user'" :src="msg.img" alt="用户上传图片" class="max-w-full rounded-lg mb-2" />
+
+              <div class="message-content prose prose-sm max-w-none" :class="msg.role === 'user' ? 'prose-invert' : ''">
+                <template v-if="msg.role === 'user'">
+                  {{ msg.content }}
+                </template>
+                <template v-else>
+                  <div v-html="md.render(msg.displayContent || '')"></div>
+                  <span v-if="msg.isStreaming" class="inline-block w-2 h-4 ml-1 align-middle bg-gray-400 animate-pulse"></span>
+                </template>
+              </div>
             </div>
           </div>
-        </div>
+
+          <!-- Typing Indicator 等待动画 -->
+          <div v-if="isWaiting" class="flex w-full justify-start animate-message-in">
+            <div class="flex max-w-[99%] md:max-w-[75%] lg:max-w-[70%] flex-row">
+              <div class="flex-shrink-0">
+                <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm mr-1.5 border border-gray-200 shadow-sm">
+                  <img src="/logo.png" alt="AI" class="w-8 h-8 rounded-full object-cover">
+                </div>
+              </div>
+              <div class="flex flex-col min-w-0 items-start">
+                <div class="text-[10px] font-bold text-gray-600 mb-1 select-none px-1.5 py-0.5 rounded-md bg-white/50 backdrop-blur-sm border border-white/20 w-fit shadow-sm mr-auto ml-1 truncate max-w-[150px] md:max-w-[250px]">
+                  康康
+                </div>
+                <div class="min-w-[4rem] min-h-[4rem] px-3 py-3 rounded-2xl bg-white border border-gray-100 shadow-card flex flex-col items-center justify-center gap-2">
+                  <div class="typing-indicator scale-125">
+                    <span class="bg-primary-400"></span>
+                    <span class="bg-primary-400"></span>
+                    <span class="bg-primary-400"></span>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 animate-pulse mt-0.5">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="whitespace-nowrap">{{ waitTime }}s</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
-</template>
-</div>
 
-<!-- 输入框 -->
-<InputBar :conversation-id="conversationId" @message-sent="onMessageSent" />
-</div>
+    <!-- 输入框 -->
+    <InputBar :conversation-id="conversationId" @message-sent="onMessageSent" />
+  </div>
 </template>
 
 <style scoped>
@@ -390,11 +427,6 @@ watch(() => props.conversationId, (newId) => {
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
-.typing-indicator.fade-out {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
 .typing-indicator span {
   display: block;
   width: 10px;
@@ -428,10 +460,6 @@ watch(() => props.conversationId, (newId) => {
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
-.animate-message-in.fade-out {
-  opacity: 0;
-  transform: translateY(10px) scale(0.95);
-}
 
 /* 气泡阴影 */
 .shadow-card {

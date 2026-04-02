@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 用户三餐记录数据交互层
@@ -39,4 +40,18 @@ public interface UserThreeMealsRepository extends JpaRepository<UserThreeMeals, 
      */
     List<UserThreeMeals> findByUserIdAndMealTypeOrderByUpdateTimeDesc(Long userId, Byte mealType);
 
+    //根据用户ID + 年 + 月 查询该月所有记录
+    @Query("SELECT u FROM UserThreeMeals u " +
+            "WHERE u.userId = :userId " +
+            "AND YEAR(u.updateTime) = :year " +
+            "AND MONTH(u.updateTime) = :month")
+    List<UserThreeMeals> findByUserIdAndUpdateTimeYearAndMonth(
+            Long userId, Integer year, Integer month
+    );
+
+    List<UserThreeMeals> findByUserIdAndUpdateTimeBetween(
+            Long userId,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    );
 }

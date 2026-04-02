@@ -1,595 +1,248 @@
-# 食物健康管理系统 API 文档
-
-## 概述
-
-本文档描述了食物健康管理系统的所有后端API接口，包括用户认证、AI对话、饮食分析等功能。
-
-### 基础信息
-
-- **基础URL**: `http://localhost:8080`
-- **CORS配置**: 允许 `http://localhost:5173`（前端开发服务器）
-- **认证方式**: Token认证（在登录/注册后返回）
-- **响应格式**: 统一使用 `Result<T>` 格式
-
-### 通用响应格式
-
-所有API接口都返回统一的响应格式：
-
-```json
-{
-  "code": 200,        // 状态码：200成功，400+错误
-  "message": "success", // 响应信息
-  "data": {}          // 响应数据，类型根据接口而定
-}
-```
+# 食物健康管理系统 API 文档（整合完整版）
+**文档版本**：v1.0.0
+**最后更新**：2026-03-31
+**基础URL**：`http://localhost:8080`
+**跨域允许**：`http://localhost:5173`
+**认证方式**：Token 认证
+**统一响应**：`Result<T>` 格式
 
 ---
 
-## 1. 用户认证模块 (`/api/auth`)
-
-### 1.1 用户登录
-
-**接口描述**: 用户登录验证，返回认证token
-
-- **请求路径**: `POST /api/auth/login`
-- **请求格式**: `application/json`
-
-**请求参数**:
-```json
-{
-  "email": "string",  // 用户名（必填）
-  "password": "string"   // 密码（RSA加密后的字符串）
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // JWT token（结构UserIDBase64+"|#|"+UserNameBase64）
-  }
-}
-```
-
-**错误响应**:
-```json
-{
-  "code": 400,
-  "message": "用户名或密码错误",
-  "data": null
-}
-```
-
-### 1.2 用户注册
-
-**接口描述**: 新用户注册
-
-- **请求路径**: `POST /api/auth/register`
-- **请求格式**: `application/json`
-
-**请求参数**:
-```json
-{
-  "username": "string",  // 用户名（必填）
-  "password": "string",  // 密码（RSA加密后的字符串）
-  "email": "string"      // 邮箱（必填）
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // JWT token（结构同注册）
-  }
-}
-```
-
-### 1.3 用户设置更新
-
-**接口描述**: 更新用户设置信息
-
-- **请求路径**: `POST /api/auth/setting`
-- **请求格式**: `application/json`
-
-**请求参数**:
-```json
-{
-  "username": "string",   // 用户名，字符串类型
-  "userid": 123,          // 用户ID，数字类型
-  "sick": [],             // 疾病信息，数组类型（List）
-  "taboo": [],            // 忌口信息，数组类型（List）
-  "img": "string"         // 图片Base64
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "username": "string",  // 用户名
-    "sick": [],             // 疾病信息，数组类型（List）
-    "taboo": [],            // 忌口信息，数组类型（List）
-    "img": "string"        // 更新后头像图片URL，字符串类型
-  }
-}
-```
-
-### 1.4 用户设置查询
-
-**接口描述**: 查询用户设置信息（主要用于密码修改）
-
-- **请求路径**: `GET /api/auth/setting`
-- **请求格式**: `application/json`
-
-**请求参数**:
-```json
-{
-  "userid": 0,           // 用户ID
-  "old_password": "string", // 旧密码（RSA加密）
-  "new_password": "string"  // 新密码（RSA加密）
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": null
-}
-```
-
-**错误响应**:
-```json
-{
-  "code": 400,
-  "message": "旧密码与原密码不一致或新旧密码一样",
-  "data": null
-}
-
-```
-
-### 1.5 用户信息查询
-
-**接口描述**: 查询用户设置信息（主要用于密码修改）
-
-- **请求路径**: `GET /api/auth/info`
-- **请求格式**: 仅携带请求头
-- **请求头示例:**
-```json
-{
-"Authorization": "Bearer token"  // 身份凭证，必填
-}
-
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "userid": 0,           //用户id
-    "username": "string",  // 用户名
-    "sick": [],             // 疾病信息，数组类型（List）
-    "taboo": [],            // 忌口信息，数组类型（List）
-    "img": "string"        // 更新后头像图片URL，字符串类型
-  }
-}
-```
-
-**错误响应**:
-```json
-{
-  "code": 400,
-  "message": "查询失败",
-  "data": null
-}
-```
+## 目录
+1. 通用规范
+2. 用户认证模块
+3. AI 对话模块
+4. 三餐记录日历模块
+5. 功能说明与集成建议
+6. 错误码与注意事项
 
 ---
 
-## 2. AI对话模块
-
-### 2.1 对话管理 (`/api/ai/conversation`)
-
-#### 2.1.1 创建对话
-
-**接口描述**: 创建新的AI对话
-
-- **请求路径**: `POST /api/ai/conversation/create`
-- **请求格式**: `application/json`
-
-**请求参数**:
-```json
-{
-  "userId": 123,         // 用户ID（必填）
-  "title": "string",      // 对话标题
-  "create_time": "string" // 创建时间（可选）
-}
-```
-
-**响应示例**:
+# 一、通用规范
+## 1.1 统一响应格式
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": {
-    "id": 456,                    // 对话ID
-    "title": "我的健康咨询",        // 对话标题
-    "userId": 123,                // 用户ID
-    "create_time": "2024-01-01T10:00:00" // 创建时间
-  }
+  "data": {}
 }
 ```
+- `code=200` 成功，`400+` 为异常
+- 日历接口兼容 `code=0` 成功、`code=-1` 失败
 
-#### 2.1.2 获取对话列表
-
-**接口描述**: 分页获取用户的对话列表
-
-- **请求路径**: `GET /api/ai/conversation/list`
-- **请求格式**: `query string`
-
-**请求参数**:
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| userId | long | 是   | -      | 用户ID |
-| pageNum | int | 否   | 1      | 页码 |
-| pageSize | int | 否   | 10     | 每页条数 |
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "content": [              // 对话列表
-      {
-        "id": 456,
-        "title": "对话1",
-        "userId": 123,
-        "createTime": "2024-01-01T10:00:00",
-        "updateTime": "2024-01-01T11:00:00"
-      }
-    ],
-    "pageNum": 1,             // 当前页码
-    "pageSize": 10,           // 每页条数
-    "total": 25,              // 总条数
-    "pages": 3                // 总页数
-  }
-}
-```
-
-#### 2.1.3 删除对话
-
-**接口描述**: 删除指定对话
-
-- **请求路径**: `DELETE /api/ai/conversation/delete`
-- **请求格式**: `query string`
-
-**请求参数**:
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| conversationId | long | 是   | 对话ID |
-| userId | long | 是   | 用户ID |
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": true
-}
-```
-
-### 2.2 消息管理 (`/api/ai/message`)
-
-#### 2.2.1 发送消息
-
-**接口描述**: 发送消息并获取AI回复
-
-- **请求路径**: `POST /api/ai/message/send`
-- **请求格式**: `application/json`
-
-**请求参数**:
-```json
-{
-  "userId": 123,              // 用户ID（必填）
-  "conversationId": 456,      // 对话ID（必填）
-  "content": "string",        // 消息内容
-  "role": "string",          // 角色（根据function_type不同含义不同）
-  "function_type": "string", // 功能类型
-  "img": "string",           // 图片base64或零食名称
-  "mimeType": "string"       // 图片类型或零食数量
-}
-```
-
-**功能类型说明**:
-| function_type | role参数说明 | img参数说明 | mimeType参数说明 | 功能描述 |
-|--------------|-------------|-------------|-----------------|----------|
-| `normal` | 无特殊含义 | 图片base64字符串 | 图片MIME类型 | 普通AI对话 |
-| `food_analysis` | 餐食类型：`breakfast`/`lunch`/`dinner` | 图片base64字符串 | 图片MIME类型 | 三餐分析 |
-| `snack_analysis` | 零食类型：`饮品`/`袋装零食` | 零食名称 | 零食数量 | 零食分析 |
-| `report_analysis` | 无特殊含义 | 图片base64字符串 | 图片MIME类型 | 报告识别 |
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 789,                    // 消息ID
-    "conversationId": 456,        // 对话ID
-    "userId": 123,                // 用户ID
-    "content": "AI回复内容",      // AI回复内容
-    "role": "assistant",          // 角色
-    "sequence": 2,                // 消息序号
-    "functionType": "NORMAL",     // 功能类型
-    "createTime": "2024-01-01T10:00:00", // 创建时间
-    "deleteFlag": 0               // 删除标志
-  }
-}
-```
-
-#### 2.2.2 获取消息列表
-
-**接口描述**: 分页获取对话中的消息列表
-
-- **请求路径**: `GET /api/ai/message/list`
-- **请求格式**: `query string`
-
-**请求参数**:
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| conversationId | long | 是   | -      | 对话ID |
-| userId | long | 是   | -      | 用户ID |
-| pageNum | int | 否   | 1      | 页码 |
-| pageSize | int | 否   | 10     | 每页条数 |
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "content": [              // 消息列表
-      {
-        "id": 789,
-        "conversationId": 456,
-        "userId": 123,
-        "content": "用户消息",
-        "role": "user",
-        "sequence": 1,
-        "functionType": "NORMAL",
-        "createTime": "2024-01-01T10:00:00",
-        "deleteFlag": 0,
-        "img": "string" //图片的url
-      },
-      {
-        "id": 790,
-        "conversationId": 456,
-        "userId": 123,
-        "content": "AI回复内容",
-        "role": "assistant",
-        "sequence": 2,
-        "functionType": "NORMAL",
-        "createTime": "2024-01-01T10:01:00",
-        "deleteFlag": 0
-      }
-    ],
-    "pageNum": 1,             // 当前页码
-    "pageSize": 10,           // 每页条数
-    "total": 50,              // 总条数
-    "pages": 5                // 总页数
-  }
-}
-```
-
----
-
-## 3. 功能详细说明
-
-### 3.1 Token认证
-
-所有需要用户身份验证的接口都需要在请求头中携带Token：
-
+## 1.2 认证请求头
+需身份验证的接口必须携带：
 ```
 Authorization: Bearer <token>
 ```
+Token 格式：`Base64(UserId)|#|Base64(UserName)`
 
-Token格式：`user_idBase64|#|usernameBase64` 的编码
+## 1.3 密码规则
+登录/注册/改密的密码均为 **RSA 加密字符串**
 
-### 3.2 功能类型详解
+---
 
-#### 3.2.1 普通AI对话 (`normal`)
-
-- **用途**: 一般性的健康咨询
-- **参数说明**:
-  - `content`: 用户的问题或描述
-  - `img`: 可选，图片的base64编码
-
-#### 3.2.2 三餐分析 (`food_analysis`)
-
-- **用途**: 分析用户的三餐饮食，提供健康建议
-- **参数说明**:
-  - `role`: 餐食类型，必须为 `breakfast`、`lunch`、`dinner` 之一
-  - `content`: 食物名称描述
-  - `img`: 可选，食物图片的base64编码
-
-**AI分析内容**:
-- 结合用户近3天的饮食记录
-- 考虑用户的忌口和疾病情况
-- 分析当前餐的营养构成
-- 提供下一餐的个性化建议
-
-#### 3.2.3 零食分析 (`snack_analysis`)
-
-- **用途**: 分析零食的健康风险等级
-- **参数说明**:
-  - `role`: 零食类型，必须为 `饮品` 或 `袋装零食`
-  - `content`: 零食名称（此参数不使用，实际使用img字段）
-  - `img`: 零食名称
-  - `mimeType`: 零食数量（克/毫升）
-
-**AI分析内容**:
-- 查询零食营养数据库
-- 结合用户24小时内的零食记录
-- 考虑用户的饮食限制和疾病
-- 给出红绿灯等级建议：
-  - 🟢 绿灯：低糖、低脂、低钠，天然食材为主
-  - 🟡 黄灯：适量食用，注意份量
-  - 🔴 红灯：高糖、高脂、高钠，建议严格限制
-
-#### 3.2.4 报告识别 (`report_analysis`)
-
-- **用途**: 识别健康报告图片
-- **参数说明**:
-  - `img`: 报告图片的base64编码
-
-### 3.3 图片处理
-
-对于支持图片上传的接口，图片处理规则：
-
-1. **图片格式**: 支持 `image/jpeg`、`image/png` 等常见格式
-2. **图片大小**: 建议不超过10MB
-3. **存储位置**: 服务器保存到 `src/main/resources/img` 目录
-4. **返回**: 返回图片的访问URL
-
-### 3.4 错误处理
-
-所有接口的错误响应都遵循统一格式：
-
+# 二、用户认证模块 `/api/auth`
+## 2.1 用户登录
+- **POST** `/api/auth/login`
+- 请求：`application/json`
 ```json
 {
-  "code": 400,          // 错误码
-  "message": "错误信息", // 错误描述
-  "data": null          // 错误时数据为null
+  "email": "string",
+  "password": "string"
+}
+```
+- 成功返回 token
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "token": "..." }
 }
 ```
 
-常见错误码：
-- `200`: 成功
-- `400`: 参数错误
-- `401`: 未授权（Token无效或过期）
-- `403`: 无权限
-- `404`: 资源不存在
-- `500`: 服务器内部错误
+## 2.2 用户注册
+- **POST** `/api/auth/register`
+```json
+{
+  "username": "string",
+  "password": "string",
+  "email": "string"
+}
+```
+- 成功返回 token
+
+## 2.3 更新用户设置
+- **POST** `/api/auth/setting`
+```json
+{
+  "username": "string",
+  "userid": 123,
+  "sick": [],
+  "taboo": [],
+  "img": "base64字符串"
+}
+```
+- 返回更新后用户信息（含头像 URL）
+
+## 2.4 修改密码（查询用户设置）
+- **GET** `/api/auth/setting`
+```json
+{
+  "userid": 0,
+  "old_password": "string",
+  "new_password": "string"
+}
+```
+- 错误：旧密码错误或新旧相同
+
+## 2.5 查询用户信息
+- **GET** `/api/auth/info`
+- 仅携带 Authorization 头
+- 返回：`userid、username、sick、taboo、img`
 
 ---
 
-## 4. 前端集成建议
+# 三、AI 对话模块
+## 3.1 对话管理 `/api/ai/conversation`
+### 3.1.1 创建对话
+- **POST** `/api/ai/conversation/create`
+```json
+{
+  "userId": 123,
+  "title": "string",
+  "create_time": "string"
+}
+```
 
-### 4.1 请求拦截器
+### 3.1.2 获取对话列表
+- **GET** `/api/ai/conversation/list`
+- 参数：`userId、pageNum、pageSize`
+- 返回分页对话列表（含总条数、总页数）
 
-建议在axios中添加请求拦截器，统一处理：
+### 3.1.3 删除对话
+- **DELETE** `/api/ai/conversation/delete`
+- 参数：`conversationId、userId`
 
-```javascript
-// 请求拦截器
-axios.interceptors.request.use(config => {
-  // 添加Token
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+## 3.2 消息管理 `/api/ai/message`
+### 3.2.1 发送消息（AI 回复）
+- **POST** `/api/ai/message/send`
+```json
+{
+  "userId": 123,
+  "conversationId": 456,
+  "content": "string",
+  "role": "string",
+  "function_type": "string",
+  "img": "string",
+  "mimeType": "string"
+}
+```
+
+### function_type 说明
+| 类型 | role | img | mimeType | 用途 |
+|------|------|-----|----------|------|
+| normal | - | base64 | 图片类型 | 普通对话 |
+| food_analysis | breakfast/lunch/dinner | base64 | 图片类型 | 三餐分析 |
+| snack_analysis | 饮品/袋装零食 | 零食名 | 数量 | 零食分析 |
+| report_analysis | - | base64 | 图片类型 | 报告识别 |
+
+### 3.2.2 获取消息列表
+- **GET** `/api/ai/message/list`
+- 参数：`conversationId、userId、pageNum、pageSize`
+- 返回分页消息（用户/AI 对话记录，含图片 URL）
+
+---
+
+# 四、三餐记录日历模块 `/api/meal`
+## 4.1 按年月查询（日历标记）
+- **GET** `/api/meal/month`
+- 参数：`year、month,userId`
+- 返回当月有饮食记录的日期列表（前端标绿）
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "year": 2026,
+    "month": 3,
+    "recordDays": ["2026-03-01","2026-03-05"]
   }
-  return config;
-});
+}
+```
 
-// 响应拦截器
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      // Token过期，跳转登录页
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+## 4.2 按日期查询当日详情
+- **GET** `/api/meal/day`
+- 参数：`date=yyyy-MM-dd，userId`
+- 返回早餐、午餐、晚餐、零食记录
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "date": "2026-03-01",
+    "breakfast": { "imageUrl":"", "comment":"", "suggest":"" },
+    "lunch": {...},
+    "dinner": {...},
+    "snack": [
+      {
+        "snack_name":"可乐",
+        "remark":"冰镇",
+        "role":0,
+        "count":500.0
+      }
+    ]
   }
-);
+}
 ```
+- `role=0` 饮品，`role=1` 袋装零食
 
-### 4.2 图片上传
-
-对于需要上传图片的接口，建议使用以下方式：
-
-```javascript
-// 图片转base64
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
-};
-
-// 使用示例
-const file = event.target.files[0];
-const base64 = await fileToBase64(file);
-const mimeType = file.type;
-
-// 发送请求
-const response = await axios.post('/api/ai/message/send', {
-  userId: 123,
-  conversationId: 456,
-  content: '请分析这餐',
-  role: 'lunch',
-  function_type: 'food_analysis',
-  img: base64,
-  mimeType: mimeType
-});
-```
-
-### 4.3 分页处理
-
-分页接口建议使用以下方式处理：
-
-```javascript
-// 分页请求
-const fetchMessages = async (conversationId, page = 1) => {
-  const response = await axios.get('/api/ai/message/list', {
-    params: {
-      conversationId,
-      userId: currentUser.id,
-      pageNum: page,
-      pageSize: 10
-    }
-  });
-  
-  const { content, pageNum, pageSize, total, pages } = response.data.data;
-  // 更新UI
-};
+## 4.3 日历模块统一错误
+```json
+{
+  "code": -1,
+  "msg": "查询失败/无记录",
+  "data": null
+}
 ```
 
 ---
 
-## 5. 注意事项
+# 五、功能与集成说明
+## 5.1 图片处理
+- 格式：JPEG/PNG
+- 大小：≤10MB
+- 上传：Base64 提交
+- 存储：`src/main/resources/img`
+- 返回：可访问图片 URL
 
-1. **RSA加密**: 用户密码在前端需要使用RSA加密，后端会解密验证，密钥暂时为空
-2. **Token管理**: Token需要在前端安全存储，建议使用localStorage
-3. **图片大小**: 上传图片时注意控制大小，避免服务器压力过大
-4. **错误处理**: 前端需要处理各种错误情况，提供友好的用户提示
-5. **并发控制**: 避免频繁发送消息，建议添加防抖或节流机制
+## 5.2 零食健康等级
+- 🟢 绿灯：低糖低脂低钠
+- 🟡 黄灯：适量食用
+- 🔴 红灯：高糖高脂高钠，建议限制
+
+## 5.3 前端建议
+- 请求拦截器统一携带 Token
+- 响应拦截器处理 401 跳转登录
+- 图片使用 `FileReader` 转 Base64
+- 分页接口统一处理 `pageNum/pageSize`
 
 ---
 
-## 6. 更新日志
+# 六、错误码与注意事项
+## 6.1 通用错误码
+- `200` 成功
+- `400` 参数错误
+- `401` 未授权/Token 失效
+- `403` 无权限
+- `404` 资源不存在
+- `500` 服务器异常
 
-### v1.0.0 (2024-01-01)
-- 初始版本发布
-- 支持用户注册登录
-- 支持AI对话功能
-- 支持三餐分析和零食分析
-- 支持图片上传和分析
+## 6.2 注意事项
+1. 密码必须前端 RSA 加密
+2. Token 建议存在 localStorage
+3. 图片避免过大导致上传失败
+4. 消息发送增加防抖/节流
+5. 日历接口 `code=0/-1`，与主系统 `200/400` 兼容
 
 ---
-
-**文档版本**: v1.0.0  
-**最后更新**: 2024-01-01  
-**维护人员**: 后端开发团队

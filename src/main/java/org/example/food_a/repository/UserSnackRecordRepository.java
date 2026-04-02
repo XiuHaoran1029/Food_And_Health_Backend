@@ -1,6 +1,7 @@
 package org.example.food_a.repository;
 
 import org.example.food_a.entity.UserSnackRecord;
+import org.example.food_a.entity.UserThreeMeals;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -46,4 +47,5 @@ public interface UserSnackRecordRepository extends JpaRepository<UserSnackRecord
      * 查询用户在指定时间之后的零食记录
      */
     List<UserSnackRecord> findByUserIdAndCreateTimeAfter(Long userId, LocalDateTime after);
+
 }

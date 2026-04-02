@@ -1,8 +1,10 @@
 package org.example.food_a.common;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-
+@Slf4j
 public class TokenGenerator {
 
     private static final String SEPARATOR = "|#|";
@@ -26,12 +28,14 @@ public class TokenGenerator {
     // 解析：只解析前两部分
     public static String[] parseToken(String token) {
         if (token == null || token.isBlank()) {
+            log.error("token解析失败：token不能为空");
             throw new IllegalArgumentException("Token 不能为空");
         }
 
         // 分割
         String[] parts = token.split("\\|\\#\\|");
         if (parts.length != 2) {
+            log.error("token解析失败：Token 格式错误，必须只有两段");
             throw new IllegalArgumentException("Token 格式错误，必须只有两段");
         }
 
@@ -42,6 +46,7 @@ public class TokenGenerator {
 
             return new String[]{userId, username};
         } catch (Exception e) {
+            log.error("Token 解析失败：格式非法或已损坏,{}", e.getMessage());
             throw new IllegalArgumentException("Token 解析失败：格式非法或已损坏", e);
         }
     }

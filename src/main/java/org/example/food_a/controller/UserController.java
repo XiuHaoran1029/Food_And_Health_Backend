@@ -2,6 +2,7 @@ package org.example.food_a.controller;
 
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.common.DecryptRSA;
 import org.example.food_a.common.Result;
 import org.example.food_a.dto.request.LoginRequest;
@@ -18,10 +19,12 @@ import java.util.Map;
 import static org.example.food_a.common.TokenGenerator.generateToken;
 import static org.example.food_a.common.TokenGenerator.parseToken;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@Slf4j  // 自动生成 log 对象
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
     private final UserService userService;
     public UserController(UserService userService, DecryptRSA RSA) {
@@ -30,10 +33,9 @@ public class UserController {
 
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginRequest loginRequest) throws Exception {
-        // 1. 这里是业务逻辑占位（实际开发中需要：
-        //    - 校验用户名密码是否正确
-        //    - 根据用户信息生成token（user_id+username+img(base64)）
-        System.out.println("前端传的密码：" + loginRequest.getPassword());
+
+        log.info("收到登录请求");
+
         String email = loginRequest.getEmail();
         String password = DecryptRSA.decryptRSA(loginRequest.getPassword());
 
@@ -43,7 +45,7 @@ public class UserController {
         Map<String, Object> map = new HashMap<>();
         map.put("token",token);
 
-        // 2. 返回成功响应
+        log.info("登录请求已处理");
         return Result.success(map);
     }
 
@@ -54,11 +56,8 @@ public class UserController {
      */
     @PostMapping("/register")
     public Result<Map<String, Object>> register(@Valid @RequestBody RegisterRequest registerRequest) throws Exception {
-        // 1. 这里是业务逻辑占位（实际开发中需要：
-        //    - 校验key是否有效
-        //    - 检查用户名/邮箱是否已存在
-        //    - 插入用户数据到数据库
-        //    - 生成token（user_id+username+img(base64)）
+
+        log.info("收到注册请求");
         String username = registerRequest.getUsername();
         String password = DecryptRSA.decryptRSA(registerRequest.getPassword());
         String email = registerRequest.getEmail();
@@ -68,16 +67,20 @@ public class UserController {
         map.put("token",token);
 
         // 2. 返回成功响应
+        log.info("注册请求已处理");
         return Result.success(map);
     }
 
     @GetMapping("/info")
     public Result<Map<String, Object>> info(@RequestParam String token) throws Exception {
+
         String[] tokens=parseToken(token);
         String userid_s=tokens[0];
         long userId = Long.parseLong(userid_s);
         String userName=tokens[1];
+        log.info("收到用户id为{}的获取用户信息请求",userId);
         Map<String,Object> map = userService.getInfo(userId,userName);
+        log.info("获取用户信息请求已处理");
         return Result.success(map);
     }
 
@@ -88,10 +91,12 @@ public class UserController {
      */
     @PostMapping("/setting")
     public Result<Map<String,Object>> setting(@Valid @RequestBody SettingRequest settingRequest){
+
         String username = settingRequest.getUsername();
         Long userid = settingRequest.getUserid();
         List<String> sick=settingRequest.getSick();
         List<String> taboo=settingRequest.getTaboo();
+        log.info("收到用户id为{}的修改用户信息请求",userid);
         String img = settingRequest.getImg();
         if (img == null) {
             img = settingRequest.getAvatar();
@@ -99,20 +104,28 @@ public class UserController {
 
 
         Map<String, Object>map=userService.setting(username,userid,sick,taboo,img);
+        log.info("修改用户信息请求已处理");
         return Result.success(map);
     }
 
     @PostMapping("/setting/change")
     public Result<?> getSetting(@Valid @RequestBody SettingRequest settingRequest){
+
         Long userid = settingRequest.getUserid();
+        log.info("收到用户id为{}的修改用户密码请求",userid);
         try{
             String old_password = DecryptRSA.decryptRSA(settingRequest.getOld_password());
             String new_password = DecryptRSA.decryptRSA(settingRequest.getNew_password());
-            if(userService.getUserSetting(userid,old_password,new_password)) return Result.success();
-            else return Result.error("旧密码与原密码不一致或新旧密码一样");
+            if(userService.getUserSetting(userid,old_password,new_password)) {
+                log.info("修改用户密码请求已处理");
+                return Result.success();
+            }else{
+                log.error("旧密码与原密码不一致或新旧密码一样");
+                return Result.error("旧密码与原密码不一致或新旧密码一样");
+            }
         }catch(Exception e){
-            e.printStackTrace();
-            return Result.error("异常"+e.getMessage());
+            log.error("修改用户密码失败：{}",e.getMessage());
+            return Result.error("修改用户密码失败"+e.getMessage());
         }
 
     }

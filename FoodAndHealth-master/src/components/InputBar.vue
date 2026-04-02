@@ -1,5 +1,5 @@
 <script setup>
-import { Plus, Mic, Send, X } from 'lucide-vue-next'
+import { Plus, Mic, Send, X ,Camera} from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
@@ -198,13 +198,13 @@ function handleKeydown(event) {
         title="上传图片"
         :disabled="isSending"
       >
-        <Plus :size="24" />
+        <Camera :size="24" />
       </button>
 
       <!-- Text Input -->
       <textarea
         v-model="inputValue"
-        placeholder="向AAA提问"
+        placeholder="向康康提问"
         rows="1"
         :disabled="isSending"
         class="flex-1 max-h-32 py-3 bg-transparent border-none outline-none text-gray-700 resize-none placeholder:text-gray-400 disabled:opacity-60"

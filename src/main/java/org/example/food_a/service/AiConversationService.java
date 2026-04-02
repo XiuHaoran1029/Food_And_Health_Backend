@@ -4,6 +4,7 @@ package org.example.food_a.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.dto.response.PageChatResponse;
 import org.example.food_a.entity.AiConversation;
 import org.example.food_a.entity.User;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AiConversationService {
@@ -36,6 +38,7 @@ public class AiConversationService {
         conversation.setUserId(userId);
         conversation.setTitle(title);
         conversation.setUpdateTime(LocalDateTime.now());
+        log.info("用户对话构建成功");
         return conversationRepository.save(conversation);
     }
 
@@ -49,7 +52,7 @@ public class AiConversationService {
                 Sort.by(Sort.Direction.DESC, "updateTime"));
         Page<AiConversation> page = conversationRepository
                 .findByUserIdAndDeleteFlag(userId, 0, pageable);
-
+        log.info("用户对话查询成功");
         // 关键：字段映射
         return new PageChatResponse<>(
                 page.getContent(),
@@ -68,10 +71,12 @@ public class AiConversationService {
         // 校验对话归属
         AiConversation conversation = conversationRepository.findByIdAndUserIdAndDeleteFlag(conversationId, userId, 0);
         if (conversation == null) {
+            log.error("修改对话标题失败：对话不存在或无权限");
             throw new RuntimeException("对话不存在或无权限");
         }
         conversation.setTitle(title);
         conversation.setUpdateTime(LocalDateTime.now());
+        log.info("修改对话标题成功");
         return conversationRepository.save(conversation);
     }
 
