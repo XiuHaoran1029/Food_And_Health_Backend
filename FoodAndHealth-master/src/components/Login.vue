@@ -1,25 +1,28 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col">
+  <div class="min-h-screen flex flex-col bg-[radial-gradient(circle_at_top_left,rgba(22,119,255,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#eef4ff_100%)]">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-100 px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
-      <h1 class="text-lg font-bold text-gray-800 flex-1 text-center">
+    <header class="app-surface-strong border-b border-white/70 px-4 py-3 flex items-center sticky top-0 z-10">
+      <h1 class="text-lg font-bold text-slate-900 flex-1 text-center tracking-wide">
         {{ mode === 'login' ? '用户登录' : '注册账户' }}
       </h1>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 p-4 max-w-lg mx-auto w-full flex flex-col justify-center">
+    <main class="flex-1 px-4 py-6 max-w-lg mx-auto w-full flex flex-col justify-center">
       <!-- Logo/Branding -->
-      <div class="text-center mb-10">
-        <div class="w-20 h-20 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-          <UserCircle size="48" />
+      <div class="text-center mb-8">
+        <div class="w-24 h-24 mx-auto mb-5 rounded-[28px] app-surface-strong flex items-center justify-center text-primary shadow-[0_16px_40px_rgba(22,119,255,0.16)]">
+          <UserCircle size="52" />
         </div>
-        <h2 class="text-2xl font-bold text-gray-800">时康日记</h2>
-        <p class="text-gray-500 mt-2">{{ mode === 'login' ? '欢迎回来，请登录您的账户' : '创建一个新账户开始使用' }}</p>
+        <div class="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400 shadow-sm">
+          Health Diary
+        </div>
+        <h2 class="mt-4 text-2xl font-bold text-slate-900">时康日记</h2>
+        <p class="text-slate-500 mt-2 leading-7">{{ mode === 'login' ? '欢迎回来，请登录您的账户' : '创建一个新账户开始使用' }}</p>
       </div>
 
       <!-- Form Area -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div class="app-card p-6 sm:p-7">
         <!-- Login Form -->
         <form v-if="mode === 'login'" @submit.prevent="handleLogin" class="space-y-5">
           <!-- 邮箱输入框 -->
@@ -33,7 +36,7 @@
                   v-model="loginForm.email"
                   type="email"
                   required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  class="app-input w-full pl-10 pr-4 py-3 rounded-2xl"
                   placeholder="请输入邮箱"
               />
             </div>
@@ -49,7 +52,7 @@
                   v-model="loginForm.password"
                   type="password"
                   required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  class="app-input w-full pl-10 pr-4 py-3 rounded-2xl"
                   placeholder="请输入密码"
               />
             </div>
@@ -57,15 +60,15 @@
 
           <div class="flex items-center justify-between text-sm">
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary" />
-              <span class="ml-2 text-gray-600">记住我</span>
+              <input type="checkbox" class="rounded border-slate-300 text-primary focus:ring-primary" />
+              <span class="ml-2 text-slate-600">记住我</span>
             </label>
             <a href="#" class="text-primary hover:text-primary/80 font-medium">忘记密码?</a>
           </div>
 
           <button
               type="submit"
-              class="w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-[0.98] transition-all"
+              class="w-full py-3.5 rounded-2xl font-bold app-primary-action active:scale-[0.98] transition-all"
           >
             登录
           </button>
@@ -83,7 +86,7 @@
                   v-model="registerForm.username"
                   type="text"
                   required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  class="app-input w-full pl-10 pr-4 py-3 rounded-2xl"
                   placeholder="请输入用户名"
               />
             </div>
@@ -99,7 +102,7 @@
                   v-model="registerForm.email"
                   type="email"
                   required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  class="app-input w-full pl-10 pr-4 py-3 rounded-2xl"
                   placeholder="请输入邮箱"
               />
             </div>
@@ -115,7 +118,7 @@
                   v-model="registerForm.password"
                   type="password"
                   required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  class="app-input w-full pl-10 pr-4 py-3 rounded-2xl"
                   placeholder="设置密码"
               />
             </div>
@@ -131,7 +134,7 @@
                   v-model="registerForm.confirmPassword"
                   type="password"
                   required
-                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-800 placeholder:text-gray-400 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  class="app-input w-full pl-10 pr-4 py-3 rounded-2xl"
                   placeholder="再次输入密码"
               />
             </div>
@@ -139,7 +142,7 @@
 
           <button
               type="submit"
-              class="w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 active:scale-[0.98] transition-all"
+              class="w-full py-3.5 rounded-2xl font-bold app-primary-action active:scale-[0.98] transition-all"
           >
             注册
           </button>
@@ -148,17 +151,17 @@
         <!-- Divider -->
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-100"></div>
+            <div class="w-full border-t border-slate-200"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-white text-gray-400">或</span>
+            <span class="px-2 bg-transparent text-slate-400">或</span>
           </div>
         </div>
 
         <!-- Social Login -->
         <button
             @click="handleThirdPartyLogin('wechat')"
-            class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 transition-all active:scale-[0.98]"
+            class="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-2xl app-surface text-slate-700 transition-all active:scale-[0.98]"
         >
           <svg class="w-5 h-5 text-[#07C160]" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8.5 12c0 .83-.67 1.5-1.5 1.5S5.5 12.83 5.5 12s.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm6 0c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5z"/>
@@ -230,7 +233,8 @@ const handleLogin = async () => {
 
     // 如果加密失败，直接抛出
     if (!encryptedPassword) {
-      throw new Error('加密失败');
+      showToast('系统安全组件异常，请联系管理员')
+      return
     }
     // 2. 发送请求 (传递邮箱)
     const res = await login({
@@ -244,12 +248,8 @@ const handleLogin = async () => {
     showToast('登录成功')
     router.push('/')
   } catch (error) {
-    if (error.message === '加密失败') {
-      showToast('系统安全组件异常，请联系管理员')
-    } else {
-      const msg = error?.message || error?.msg || '登录失败，请检查邮箱和密码'
-      showToast('登录失败，请检查邮箱和密码')
-    }
+    const msg = error?.message || error?.msg || '登录失败，请检查邮箱和密码'
+    showToast(msg)
   }
 }
 

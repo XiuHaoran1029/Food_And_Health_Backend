@@ -75,17 +75,21 @@ const handleMenuClick = (event) => {
 }
 
 onMounted(() => {
-  const menuButton = document.querySelector('.menu-button')
-  if (menuButton) {
-    menuButton.addEventListener('touchstart', handleMenuClick, { passive: false })
-    menuButton.addEventListener('click', () => { hasUserInteracted.value = true })
-  }
+  // 只依赖模板上的 click 事件，避免 touchstart + click 触发两次切换导致侧边栏“卡住”
 })
 
 // 清理所有流
 function clearAllStreaming() {
   Object.values(streamingTimers).forEach(timer => clearInterval(timer))
   streamingTimers = {}
+}
+
+function retractMessage(messageId) {
+  if (!messageId) return
+  messages.value = messages.value.filter(msg => String(msg.id) !== String(messageId))
+  if (messages.value.length === 0) {
+    stopWaiting()
+  }
 }
 
 onUnmounted(() => {
@@ -246,7 +250,8 @@ function onMessageSent(msg) {
       id: tempId,
       role: 'user',
       content: msg.content || msg,
-      img: msg.img || null
+      img: msg.img || null,
+      pending: !!msg.pending
     })
     scrollToBottom()
     // 开始等待AI回复
@@ -257,7 +262,7 @@ function onMessageSent(msg) {
   }
 }
 
-defineExpose({appendMessage, startWaiting, stopWaiting, onMessageSent})
+defineExpose({appendMessage, startWaiting, stopWaiting, onMessageSent, retractMessage})
 
 watch(() => props.conversationId, (newId) => {
   if (newId) {
@@ -269,12 +274,12 @@ watch(() => props.conversationId, (newId) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full relative">
+  <div class="flex flex-col h-full relative bg-[radial-gradient(circle_at_top_right,rgba(22,119,255,0.08),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.06),transparent_22%),linear-gradient(180deg,rgba(248,250,252,0.9),rgba(239,246,255,0.9))]">
     <!-- 移动端顶部栏：菜单按钮与标题同排，避免遮挡 -->
-    <div class="md:hidden shrink-0 flex items-center gap-3 px-3 pt-5 pb-2 border-b border-gray-200 bg-white/95 backdrop-blur-sm z-10">
+    <div class="md:hidden shrink-0 flex items-center gap-3 px-3 pt-5 pb-3 app-surface-strong border-b border-white/70 z-10">
       <button
         @click="handleMenuClick"
-        class="menu-button flex-shrink-0 p-2 -ml-1 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors select-none"
+        class="menu-button flex-shrink-0 p-2 -ml-1 rounded-xl app-icon-action select-none"
         style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;"
         aria-label="打开侧边栏"
       >
@@ -282,8 +287,8 @@ watch(() => props.conversationId, (newId) => {
       </button>
 
       <div class="min-w-0 flex-1">
-        <p class="text-[10px] uppercase tracking-wider text-gray-400 leading-none mb-1 pt-3">当前对话</p>
-        <h2 class="text-base font-semibold text-gray-800 truncate">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-slate-400 leading-none mb-1">当前对话</p>
+        <h2 class="text-base font-semibold text-slate-900 truncate">
           {{ conversationTitle || '未命名对话' }}
         </h2>
       </div>
@@ -291,10 +296,10 @@ watch(() => props.conversationId, (newId) => {
 
     <div class="flex-1 flex flex-col min-h-0">
       <!-- 桌面端标题栏 -->
-      <div v-if="conversationId" class="hidden md:block shrink-0 px-4 pt-6 pb-3 border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+      <div v-if="conversationId" class="hidden md:block shrink-0 px-5 pt-6 pb-4 app-surface-strong border-b border-white/70 rounded-b-[28px] mx-4 mt-4">
         <div class="min-w-0">
-          <p class="text-xs uppercase tracking-wider text-gray-400 mb-1">当前对话</p>
-          <h2 class="text-lg font-semibold text-gray-800 truncate">
+          <p class="text-xs uppercase tracking-[0.24em] text-slate-400 mb-1">当前对话</p>
+          <h2 class="text-lg font-semibold text-slate-900 truncate">
             {{ conversationTitle || '未命名对话' }}
           </h2>
         </div>
@@ -303,18 +308,25 @@ watch(() => props.conversationId, (newId) => {
       <!-- 消息区域 -->
       <div
         ref="messagesContainer"
-        class="flex-1 overflow-y-auto px-3 sm:px-4 pb-2 space-y-4 pt-3 md:pt-4"
+        class="flex-1 overflow-y-auto px-3 sm:px-4 pb-3 space-y-4 pt-4 md:pt-6"
       >
         <!-- 空状态 -->
         <div v-if="!conversationId || messages.length === 0" class="flex flex-col items-center justify-center h-full">
-          <div class="text-center mb-12">
-            <img
-                src="../../public/logo.png"
-                alt="Logo"
-                class="w-16 h-16 rounded-2xl object-cover mx-auto mb-6 shadow-lg shadow-primary/30"
-            >
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">你好，我是康康</h1>
-            <p class="text-gray-500">我可以帮你分析健康问题，助力生活美满</p>
+          <div class="text-center mb-12 max-w-md w-full px-4">
+            <div class="app-card-soft px-6 py-8 sm:px-8 sm:py-10">
+              <img
+                  src="/logo.png"
+                  alt="Logo"
+                  class="w-16 h-16 rounded-3xl object-cover mx-auto mb-6 shadow-lg shadow-primary/20 ring-1 ring-white"
+              >
+              <h1 class="text-2xl font-bold text-slate-900 mb-3">你好，我是康康</h1>
+              <p class="text-slate-500 leading-7">我可以帮你分析健康问题，也可以直接进入三餐分析、零食分析和用药提醒。</p>
+              <div class="mt-6 flex flex-wrap justify-center gap-2 text-xs text-slate-500">
+                <span class="px-3 py-1.5 rounded-full bg-slate-100">AI 对话</span>
+                <span class="px-3 py-1.5 rounded-full bg-slate-100">三餐分析</span>
+                <span class="px-3 py-1.5 rounded-full bg-slate-100">零食记录</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -328,16 +340,19 @@ watch(() => props.conversationId, (newId) => {
           >
             <!-- AI头像 -->
             <div v-if="msg.role !== 'user'" class="mr-2 shrink-0 self-end">
-              <img src="/logo.png" alt="AI" class="w-8 h-8 rounded-full object-cover">
+              <div class="w-9 h-9 rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80 overflow-hidden flex items-center justify-center">
+                <img src="/logo.png" alt="AI" class="w-8 h-8 rounded-full object-cover">
+              </div>
             </div>
 
             <div
-              class="max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm"
+              class="max-w-[78%] px-4 py-3 rounded-3xl text-sm leading-relaxed break-words shadow-sm transition-all"
               :class="msg.role === 'user'
-                ? 'bg-primary text-white rounded-br-sm'
-                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'"
+                ? 'bg-primary text-white rounded-br-md shadow-[0_12px_28px_rgba(22,119,255,0.24)]'
+                : 'bg-white/95 border border-slate-200/80 text-slate-800 rounded-bl-md shadow-[0_10px_28px_rgba(15,23,42,0.08)]'"
             >
-              <img v-if="msg.img && msg.role === 'user'" :src="msg.img" alt="用户上传图片" class="max-w-full rounded-lg mb-2" />
+              <img v-if="msg.img && msg.role === 'user'" :src="msg.img" alt="用户上传图片" class="max-w-full rounded-2xl mb-3 ring-1 ring-white/20" />
+
 
               <div class="message-content prose prose-sm max-w-none" :class="msg.role === 'user' ? 'prose-invert' : ''">
                 <template v-if="msg.role === 'user'">
@@ -355,21 +370,21 @@ watch(() => props.conversationId, (newId) => {
           <div v-if="isWaiting" class="flex w-full justify-start animate-message-in">
             <div class="flex max-w-[99%] md:max-w-[75%] lg:max-w-[70%] flex-row">
               <div class="flex-shrink-0">
-                <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm mr-1.5 border border-gray-200 shadow-sm">
+                <div class="w-9 h-9 rounded-2xl bg-white flex items-center justify-center text-white font-bold text-sm mr-1.5 border border-slate-200/80 shadow-sm overflow-hidden">
                   <img src="/logo.png" alt="AI" class="w-8 h-8 rounded-full object-cover">
                 </div>
               </div>
               <div class="flex flex-col min-w-0 items-start">
-                <div class="text-[10px] font-bold text-gray-600 mb-1 select-none px-1.5 py-0.5 rounded-md bg-white/50 backdrop-blur-sm border border-white/20 w-fit shadow-sm mr-auto ml-1 truncate max-w-[150px] md:max-w-[250px]">
+                <div class="text-[10px] font-bold text-slate-500 mb-1 select-none px-2 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-slate-200/80 w-fit shadow-sm mr-auto ml-1 truncate max-w-[150px] md:max-w-[250px]">
                   康康
                 </div>
-                <div class="min-w-[4rem] min-h-[4rem] px-3 py-3 rounded-2xl bg-white border border-gray-100 shadow-card flex flex-col items-center justify-center gap-2">
+                <div class="min-w-[4rem] min-h-[4rem] px-4 py-4 rounded-3xl bg-white/95 border border-slate-200/80 shadow-[0_10px_28px_rgba(15,23,42,0.08)] flex flex-col items-center justify-center gap-2">
                   <div class="typing-indicator scale-125">
                     <span class="bg-primary-400"></span>
                     <span class="bg-primary-400"></span>
                     <span class="bg-primary-400"></span>
                   </div>
-                  <div class="flex items-center gap-1.5 text-[11px] text-gray-400 font-mono bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 animate-pulse mt-0.5">
+                  <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 animate-pulse mt-0.5">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span class="whitespace-nowrap">{{ waitTime }}s</span>
                   </div>
@@ -382,7 +397,7 @@ watch(() => props.conversationId, (newId) => {
     </div>
 
     <!-- 输入框 -->
-    <InputBar :conversation-id="conversationId" @message-sent="onMessageSent" />
+    <InputBar :conversation-id="conversationId" @message-sent="onMessageSent" @message-retracted="retractMessage" />
   </div>
 </template>
 
@@ -461,8 +476,6 @@ watch(() => props.conversationId, (newId) => {
 }
 
 
-/* 气泡阴影 */
-.shadow-card {
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.04);
-}
 </style>
+
+

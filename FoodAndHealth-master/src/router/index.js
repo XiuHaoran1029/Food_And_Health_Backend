@@ -18,12 +18,12 @@ const router = createRouter({
         {
             path: '/snack-analysis',
             name: 'SnackAnalysis',
-            component: () => import('@/components/SnackAnalysis.vue')
+            component: () => import('@/components/SnackAnalysisFixed.vue')
         },
         {
             path: '/medication-reminder',
             name: 'MedicationReminder',
-            component: () => import('@/components/MedicationReminder.vue')
+            component: () => import('@/components/MedicationReminderFixed.vue')
         },
         {
             path: '/meal-calendar',

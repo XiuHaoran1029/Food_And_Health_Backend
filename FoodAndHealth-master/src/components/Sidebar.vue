@@ -3,11 +3,15 @@ import { ref, onMounted } from 'vue'
 import { MessageSquarePlus, MessageSquare, User, Trash2, CalendarDays } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { useMediaQuery } from '@vueuse/core'
 import { getConversationList, createConversation, deleteConversation } from '@/api/conversation'
+import { useSidebarStore } from '@/store/sidebar'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
 const userStore = useUserStore()
+const sidebarStore = useSidebarStore()
+const isLargeScreen = useMediaQuery('(min-width: 768px)')
 
 const props = defineProps({
   activeConversationId: {
@@ -81,6 +85,7 @@ async function handleNewConversation() {
     conversations.value.unshift(newConv);
     emit('conversations-loaded', conversations.value)
     emit('select-conversation', newConv);
+    if (!isLargeScreen.value) sidebarStore.setOpen(false)
   } catch (e) {
     showToast(e.message || '创建对话失败');
   }
@@ -98,6 +103,11 @@ async function handleDeleteConversation(conv, event) {
 
 function handleSelectConversation(conv) {
   emit('select-conversation', conv)
+  if (!isLargeScreen.value) sidebarStore.setOpen(false)
+}
+
+function isActiveConversation(conv) {
+  return String(conv?.id) === String(props.activeConversationId)
 }
 
 const handleClick = (buttonText) => {
@@ -106,25 +116,31 @@ const handleClick = (buttonText) => {
   } else if (buttonText === 'MealCalendar') {
     router.push({ name: 'MealCalendar' })
   }
+  if (!isLargeScreen.value) sidebarStore.setOpen(false)
 }
 </script>
 
 <template>
-  <div class="w-64 h-full bg-white border-r border-gray-200 flex flex-col shrink-0 shadow-sm">
+  <div class="w-72 h-full shrink-0 flex flex-col bg-white/85 backdrop-blur-xl border-r border-white/70 shadow-[16px_0_48px_rgba(15,23,42,0.08)]">
     <!-- Logo -->
-    <div class="h-16 pt-5 flex items-center px-4 border-b border-gray-100">
-      <img
-          src="/logo.png"
-          alt="Logo"
-          class="w-8 h-8 rounded-lg mr-2 shadow-sm object-cover"
-      >
-      <span class="text-xl font-bold text-gray-800">时康日记</span>
+    <div class="px-4 pt-5 pb-4 border-b border-slate-200/70">
+      <div class="flex items-center gap-3 rounded-2xl app-surface px-3 py-3">
+        <img
+            src="/logo.png"
+            alt="Logo"
+            class="w-10 h-10 rounded-2xl shadow-sm object-cover ring-1 ring-white"
+        >
+        <div class="min-w-0">
+          <div class="text-[10px] uppercase tracking-[0.22em] text-slate-400 font-semibold">Health Diary</div>
+          <span class="block text-lg font-bold text-slate-900 truncate">时康日记</span>
+        </div>
+      </div>
     </div>
 
     <!-- New Chat Button -->
     <div class="p-4">
       <button
-        class="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary hover:bg-primary/20 py-2.5 rounded-lg transition-colors font-medium"
+        class="w-full flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-semibold app-primary-action transition-all active:scale-[0.99]"
         @click="handleNewConversation"
       >
         <MessageSquarePlus :size="20" />
@@ -134,36 +150,44 @@ const handleClick = (buttonText) => {
 
     <!-- Categories / Tags -->
     <div class="px-4 pb-2">
-      <div class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">最近对话</div>
+      <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-[0.24em]">最近对话</div>
     </div>
 
     <!-- Chat List -->
-    <div class="flex-1 overflow-y-auto px-2 space-y-1">
+    <div class="flex-1 overflow-y-auto px-3 space-y-1 app-scrollbar-hidden">
       <button
         v-for="conv in conversations"
         :key="conv.id"
-        class="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 truncate transition-colors group"
+        class="w-full text-left px-3 py-3 rounded-2xl text-sm flex items-center gap-3 truncate transition-all group border"
+        :class="isActiveConversation(conv)
+          ? 'bg-primary/10 border-primary/20 text-slate-900 shadow-sm'
+          : 'bg-transparent border-transparent text-slate-700 hover:bg-white/70 hover:border-slate-200/80 hover:shadow-sm'"
         @click="handleSelectConversation(conv)"
       >
-        <MessageSquare :size="16" class="shrink-0 text-gray-400 group-hover:text-gray-600" />
-        <span class="truncate flex-1">{{ conv.title }}</span>
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl" :class="isActiveConversation(conv) ? 'bg-white text-primary shadow-sm' : 'bg-slate-100 text-slate-400 group-hover:bg-white'">
+          <MessageSquare :size="16" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <span class="block truncate font-medium">{{ conv.title }}</span>
+          <span v-if="isActiveConversation(conv)" class="text-[11px] text-primary/80">当前会话</span>
+        </div>
         <Trash2
           :size="14"
-          class="shrink-0 text-gray-300 group-hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+          class="shrink-0 text-red-400 opacity-100 md:text-slate-300 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
           @click="handleDeleteConversation(conv, $event)"
         />
       </button>
     </div>
 
     <!-- Bottom Actions -->
-    <div class="p-4 border-t border-gray-100 space-y-2">
-        <button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" @click="handleClick('Settings')">
-            <User :size="18" class="text-gray-500" />
-            <span>我的空间</span>
+    <div class="p-4 border-t border-slate-200/70 space-y-2">
+        <button class="w-full flex items-center gap-3 px-3 py-3 text-sm text-slate-700 hover:bg-white/80 rounded-2xl transition-all border border-transparent hover:border-slate-200/80 hover:shadow-sm" @click="handleClick('Settings')">
+            <User :size="18" class="text-slate-500" />
+            <span class="font-medium">我的空间</span>
         </button>
-        <button class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" @click="handleClick('MealCalendar')">
-            <CalendarDays :size="18" class="text-gray-500" />
-            <span>三餐日历</span>
+        <button class="w-full flex items-center gap-3 px-3 py-3 text-sm text-slate-700 hover:bg-white/80 rounded-2xl transition-all border border-transparent hover:border-slate-200/80 hover:shadow-sm" @click="handleClick('MealCalendar')">
+            <CalendarDays :size="18" class="text-slate-500" />
+            <span class="font-medium">三餐日历</span>
         </button>
     </div>
   </div>

@@ -1,22 +1,23 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col">
+  <div class="min-h-screen flex flex-col bg-[radial-gradient(circle_at_top_left,rgba(22,119,255,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#eef4ff_100%)]">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-100 px-4 pt-5 py-3 flex items-center shadow-sm sticky top-0 z-10">
+    <header class="app-surface-strong border-b border-white/70 px-4 pt-5 py-3 flex items-center sticky top-0 z-10">
       <button
-        class="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
+        class="p-2 -ml-2 rounded-full app-icon-action transition-colors"
         @click="goBack"
       >
         <ArrowLeft size="24" />
       </button>
-      <h1 class="text-lg font-bold text-gray-800 flex-1 text-center pr-8">三餐分析</h1>
+      <h1 class="text-lg font-bold text-slate-900 flex-1 text-center pr-8 tracking-wide">三餐分析</h1>
     </header>
 
     <!-- 表单区域 -->
     <main class="flex-1 p-4 max-w-lg mx-auto w-full">
       <form class="space-y-6" @submit.prevent="onSubmit">
+        <div class="app-card p-5 sm:p-6 space-y-6">
         <!-- 1. Meal Type Selection -->
         <div class="space-y-3">
-          <label class="block text-sm font-medium text-gray-700">餐型选择</label>
+          <label class="block text-sm font-medium text-slate-700">餐型选择</label>
           <div class="grid grid-cols-3 gap-3">
             <label
               v-for="type in mealTypes"
@@ -29,25 +30,21 @@
                 :value="type.value"
                 class="peer sr-only"
               />
-              <div class="flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200
-                border-gray-200 bg-white text-gray-600
-                peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary
-                group-hover:border-gray-300 peer-checked:group-hover:border-primary">
+              <span class="flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-200 app-surface text-slate-500 peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary group-hover:border-slate-300 peer-checked:group-hover:border-primary">
                 <span class="text-2xl mb-1">{{ type.icon }}</span>
                 <span class="text-sm font-medium">{{ type.label }}</span>
-              </div>
+              </span>
             </label>
           </div>
         </div>
 
         <!-- 2. Food Name Input -->
         <div class="space-y-3">
-          <label class="block text-sm font-medium text-gray-700">食物名称</label>
+          <label class="block text-sm font-medium text-slate-700">食物名称</label>
           <input
             type="text"
             v-model="form.foodName"
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-800 placeholder:text-gray-400
-            focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+            class="app-input w-full px-4 py-3 rounded-2xl"
             placeholder="例如：牛肉面、沙拉..."
             maxlength="50"
           />
@@ -55,15 +52,15 @@
 
         <!-- 3. Image Upload -->
         <div class="space-y-3">
-          <label class="block text-sm font-medium text-gray-700">食物图片</label>
+          <label class="block text-sm font-medium text-slate-700">食物图片</label>
 
           <!-- Image Preview -->
-          <div v-if="form.imageUrl" class="relative w-full aspect-square sm:aspect-video rounded-xl overflow-hidden shadow-sm border border-gray-200 group">
+          <div v-if="form.imageUrl" class="relative w-full aspect-square sm:aspect-video rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 group app-surface">
             <img :src="form.imageUrl" alt="食物预览" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
             <button
               type="button"
-              class="absolute top-3 right-3 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 backdrop-blur-sm transition-colors"
+              class="absolute top-3 right-3 bg-slate-900/60 text-white p-2 rounded-full hover:bg-slate-900/75 backdrop-blur-sm transition-colors"
               @click="deleteImage"
             >
               <X size="18" />
@@ -74,8 +71,8 @@
           <button
             v-else
             type="button"
-            class="w-full aspect-video border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-400
-            hover:border-primary hover:text-primary hover:bg-primary/5 transition-all gap-3 bg-white"
+            class="w-full aspect-video border border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-slate-400
+            hover:border-primary hover:text-primary hover:bg-primary/5 transition-all gap-3 app-surface"
             @click="selectImage"
           >
             <CameraIcon size="32" stroke-width="1.5" />
@@ -87,12 +84,13 @@
         <div class="pt-4">
           <button
             type="submit"
-            class="w-full py-3.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30
+            class="w-full py-3.5 rounded-2xl font-bold app-primary-action
             active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             :disabled="!form.mealType || !form.foodName || !form.imageUrl || loading"
           >
             {{ loading ? '分析中...' : '提交记录' }}
           </button>
+        </div>
         </div>
       </form>
     </main>

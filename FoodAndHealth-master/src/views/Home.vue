@@ -77,8 +77,6 @@ const effectiveIsLargeScreen = computed(() => {
 // =============================================
 function initPage() {
   console.log('✅ 页面已刷新/重新初始化')
-  currentConversationId.value = null       // 重置会话
-  currentConversationTitle.value = ''
   sidebarStore.setOpen(effectiveIsLargeScreen.value) // 重置侧边栏
 }
 
@@ -110,10 +108,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex h-screen w-full bg-gray-50 overflow-hidden relative">
+  <div class="flex h-screen w-full overflow-hidden relative bg-[radial-gradient(circle_at_top_left,rgba(22,119,255,0.10),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.08),transparent_26%),linear-gradient(180deg,#f8fafc_0%,#eef4ff_100%)]">
     <div
         v-if="!effectiveIsLargeScreen && isOpen"
-        class="fixed inset-0 bg-black/50 z-20 transition-opacity"
+        class="fixed inset-0 z-20 bg-slate-950/45 backdrop-blur-sm transition-opacity"
         @click="sidebarStore.setOpen(false)"
     ></div>
 
@@ -128,7 +126,7 @@ onUnmounted(() => {
         @conversations-loaded="handleConversationsLoaded"
     />
 
-    <div class="flex-1 flex flex-col h-full w-full relative transition-all duration-300">
+    <div class="flex-1 flex flex-col h-full w-full relative transition-all duration-300 min-w-0">
       <MainContent
         :conversation-id="currentConversationId"
         :conversation-title="currentConversationTitle"

@@ -1,20 +1,13 @@
-# 时康日记（AAA助手）前端
+# 时康日记 前端
 
 > 基于 Vue 3 + Vite + Capacitor 构建的健康管理前端，面向 Web 与 Android 双端使用，支持 AI 对话、三餐分析、零食分析、用药提醒、饮食日历和个人信息管理。
 
-![界面预览](AAA.png)
+![界面预览](e0b8a101b400a83bff935186abcdc7c3.jpg))
 
 ## 项目简介
 
 这个项目是一个围绕“食物健康管理”场景打造的前端应用。它并不只是一个聊天界面，而是把健康对话、饮食记录、零食分析、用药计划和个人设置整合到同一套移动优先的界面中。
 
-当前代码中同时出现了几个命名：
-
-- 登录页使用 `AAA助手`
-- 侧边栏标题使用 `时康日记`
-- 仓库和旧说明中保留了 `FoodAndHealth` / `AAA` 的叫法
-
-如果你在统一对外文案，建议优先使用 **“时康日记（AAA助手）”**。
 
 ## 功能特性
 
@@ -92,8 +85,8 @@ npm install
 
 ```dotenv
 VITE_WEB_API_BASE_URL=/
-VITE_NATIVE_API_BASE_URL=http://123.56.144.72:8080
-VITE_API_PROXY_TARGET=http://123.56.144.72:8080
+VITE_NATIVE_API_BASE_URL=http://***:8080
+VITE_API_PROXY_TARGET=http://***:8080
 ```
 
 说明：

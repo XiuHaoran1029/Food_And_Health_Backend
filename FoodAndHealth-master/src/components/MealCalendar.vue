@@ -184,13 +184,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 text-gray-800">
+  <div class="min-h-screen text-slate-800 bg-[radial-gradient(circle_at_top_left,rgba(22,119,255,0.10),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.10),transparent_24%),linear-gradient(180deg,#f8fafc_0%,#eef4ff_100%)]">
     <div class="mx-auto flex min-h-screen max-w-6xl flex-col px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
       <header class="mb-4 sm:mb-6">
-        <div class="rounded-3xl border border-white/70 bg-white/85 p-4 shadow-[0_12px_40px_rgba(15,23,42,0.08)] backdrop-blur">
+        <div class="app-surface-strong rounded-3xl p-4">
           <div class="flex items-center gap-3">
             <button
-                class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-700 transition hover:bg-gray-200"
+                class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl app-icon-action transition"
                 @click="goBack"
                 aria-label="返回"
             >
@@ -201,18 +201,18 @@ onMounted(async () => {
                 <CalendarDays :size="18" />
                 <span class="text-xs font-semibold uppercase tracking-[0.2em]">Meal Calendar</span>
               </div>
-              <h1 class="truncate text-xl font-bold text-gray-900 sm:text-2xl">三餐饮食记录日历</h1>
-              <p class="mt-1 text-sm text-gray-500">点击日期查看当日饮食记录，绿色日期表示已记录</p>
+              <h1 class="truncate text-xl font-bold text-slate-900 sm:text-2xl">三餐饮食记录日历</h1>
+              <p class="mt-1 text-sm text-slate-500">点击日期查看当日饮食记录，绿色日期表示已记录</p>
             </div>
           </div>
         </div>
       </header>
 
       <main class="flex-1">
-        <section class="rounded-3xl border border-white/70 bg-white/90 p-3 shadow-[0_14px_50px_rgba(15,23,42,0.08)] backdrop-blur sm:p-4 lg:p-5">
+        <section class="app-card p-3 sm:p-4 lg:p-5">
           <div class="mb-4 flex items-center justify-between gap-3">
             <button
-                class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-2xl app-icon-action shadow-sm transition active:scale-95"
                 @click="changeMonth(-1)"
                 aria-label="上一个月"
             >
@@ -221,12 +221,12 @@ onMounted(async () => {
 
             <div class="min-w-0 text-center">
               <div class="text-sm font-medium text-emerald-600">当前月份</div>
-              <div class="text-xl font-bold text-gray-900 sm:text-2xl">{{ currentMonthTitle }}</div>
-              <div v-if="monthLoading" class="mt-1 text-xs text-gray-400">正在同步月记录...</div>
+              <div class="text-xl font-bold text-slate-900 sm:text-2xl">{{ currentMonthTitle }}</div>
+              <div v-if="monthLoading" class="mt-1 text-xs text-slate-400">正在同步月记录...</div>
             </div>
 
             <button
-                class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-2xl app-icon-action shadow-sm transition active:scale-95"
                 @click="changeMonth(1)"
                 aria-label="下一个月"
             >
@@ -234,7 +234,7 @@ onMounted(async () => {
             </button>
           </div>
 
-          <div class="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-gray-400 sm:gap-2 sm:text-sm">
+          <div class="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-slate-400 sm:gap-2 sm:text-sm">
             <div v-for="label in weekLabels" :key="label" class="py-2">{{ label }}</div>
           </div>
 
@@ -245,7 +245,7 @@ onMounted(async () => {
                 type="button"
                 class="calendar-day group relative flex h-12 items-start justify-start rounded-2xl p-2 text-left transition-all duration-200 sm:h-16 sm:p-3"
                 :class="cell ? [
-                cell.hasRecord ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white text-gray-800 hover:bg-gray-50',
+                cell.hasRecord ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white text-slate-800 hover:bg-slate-50',
                 cell.isToday ? 'ring-2 ring-sky-500 ring-offset-2 ring-offset-white' : '',
                 cell.isSelected ? 'scale-[0.98]' : ''
               ] : 'pointer-events-none bg-transparent'"
@@ -270,17 +270,17 @@ onMounted(async () => {
     </div>
 
     <Transition name="meal-modal">
-      <div v-if="modalVisible" class="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-4">
+        <div v-if="modalVisible" class="fixed inset-0 z-50 flex items-center justify-center px-3 py-4 sm:px-4">
         <div class="absolute inset-0 bg-slate-900/55 backdrop-blur-sm" @click="closeModal"></div>
 
-        <section class="relative z-10 w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-[0_30px_100px_rgba(15,23,42,0.28)]">
-          <div class="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:px-6">
+        <section class="relative z-10 w-full max-w-4xl overflow-hidden rounded-[28px] app-surface-strong">
+          <div class="flex items-start justify-between gap-3 border-b border-slate-200/80 px-4 py-4 sm:px-6">
             <div class="min-w-0">
               <p class="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-500">当日详情</p>
-              <h3 class="mt-1 truncate text-xl font-bold text-gray-900 sm:text-2xl">{{ selectedDate }} 饮食记录</h3>
+              <h3 class="mt-1 truncate text-xl font-bold text-slate-900 sm:text-2xl">{{ selectedDate }} 饮食记录</h3>
             </div>
             <button
-                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition hover:bg-gray-200"
+                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full app-icon-action transition"
                 @click="closeModal"
                 aria-label="关闭弹窗"
             >
@@ -289,7 +289,7 @@ onMounted(async () => {
           </div>
 
           <div class="max-h-[75vh] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-            <div v-if="detailLoading" class="flex min-h-[280px] items-center justify-center text-gray-500">
+            <div v-if="detailLoading" class="flex min-h-[280px] items-center justify-center text-slate-500">
               <div class="flex flex-col items-center gap-3">
                 <div class="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-500"></div>
                 <p>正在加载饮食记录...</p>
@@ -303,19 +303,19 @@ onMounted(async () => {
             <!-- 核心修改：强化餐食数据的存在性判断，仅渲染有有效数据的餐食 -->
             <div v-else-if="dayDetail" class="space-y-5">
               <!-- 早餐模块：仅当 breakfast 存在且包含核心字段（name/imageUrl 至少一个）时显示 -->
-              <div v-if="dayDetail.breakfast && (dayDetail.breakfast.name || dayDetail.breakfast.imageUrl)" class="overflow-hidden rounded-3xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+              <div v-if="dayDetail.breakfast && (dayDetail.breakfast.name || dayDetail.breakfast.imageUrl)" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-5">
                   <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
                     <component :is="mealIcon('breakfast')" :size="18" />
                   </div>
                   <div>
-                    <div class="text-sm font-semibold text-gray-500">{{ mealLabel('breakfast') }}</div>
-                    <div class="text-base font-bold text-gray-900">{{ dayDetail.breakfast.name || dayDetail.breakfast.comment || '早餐记录' }}</div>
+                    <div class="text-sm font-semibold text-slate-500">{{ mealLabel('breakfast') }}</div>
+                    <div class="text-base font-bold text-slate-900">{{ dayDetail.breakfast.name || dayDetail.breakfast.comment || '早餐记录' }}</div>
                   </div>
                 </div>
 
                 <div class="grid gap-4 p-4 sm:grid-cols-[180px_1fr] sm:p-5">
-                  <div class="overflow-hidden rounded-2xl bg-gray-100 shadow-sm">
+                  <div class="overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
                     <img
                         :src="`http://123.56.144.72:8080/image/${dayDetail.breakfast.imageUrl}`"
                         :alt="`${mealLabel('breakfast')}图片`"
@@ -325,16 +325,16 @@ onMounted(async () => {
 
                   <div class="space-y-3">
                     <div>
-                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">名称 / 备注</p>
-                      <p class="mt-1 text-sm leading-6 text-gray-700">{{ dayDetail.breakfast.comment || '暂无备注' }}</p>
+                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">名称 / 备注</p>
+                      <p class="mt-1 text-sm leading-6 text-slate-700">{{ dayDetail.breakfast.comment || '暂无备注' }}</p>
                     </div>
                     <!-- 健康建议：默认折叠，使用 Markdown 渲染 -->
                     <button
                         @click="toggleSuggest('breakfast')"
                         class="flex items-center justify-between w-full text-left"
                     >
-                      <span class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">健康建议</span>
-                      <span class="text-xs text-gray-400">{{ showSuggest.breakfast ? '收起 ▲' : '展开 ▼' }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">健康建议</span>
+                        <span class="text-xs text-slate-400">{{ showSuggest.breakfast ? '收起 ▲' : '展开 ▼' }}</span>
                     </button>
                     <div
                         v-show="showSuggest.breakfast"
@@ -346,19 +346,19 @@ onMounted(async () => {
               </div>
 
               <!-- 午餐模块：仅当 lunch 存在且包含核心字段（name/imageUrl 至少一个）时显示 -->
-              <div v-if="dayDetail.lunch && (dayDetail.lunch.name || dayDetail.lunch.imageUrl)" class="overflow-hidden rounded-3xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+              <div v-if="dayDetail.lunch && (dayDetail.lunch.name || dayDetail.lunch.imageUrl)" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-5">
                   <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
                     <component :is="mealIcon('lunch')" :size="18" />
                   </div>
                   <div>
-                    <div class="text-sm font-semibold text-gray-500">{{ mealLabel('lunch') }}</div>
-                    <div class="text-base font-bold text-gray-900">{{ dayDetail.lunch.name || dayDetail.lunch.comment || '未命名餐品' }}</div>
+                    <div class="text-sm font-semibold text-slate-500">{{ mealLabel('lunch') }}</div>
+                    <div class="text-base font-bold text-slate-900">{{ dayDetail.lunch.name || dayDetail.lunch.comment || '未命名餐品' }}</div>
                   </div>
                 </div>
 
                 <div class="grid gap-4 p-4 sm:grid-cols-[180px_1fr] sm:p-5">
-                  <div class="overflow-hidden rounded-2xl bg-gray-100 shadow-sm">
+                  <div class="overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
                     <img
                         :src="`http://123.56.144.72:8080/image/${dayDetail.lunch.imageUrl}`"
                         :alt="`${mealLabel('lunch')}图片`"
@@ -368,16 +368,16 @@ onMounted(async () => {
 
                   <div class="space-y-3">
                     <div>
-                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">名称 / 备注</p>
-                      <p class="mt-1 text-sm leading-6 text-gray-700">{{ dayDetail.lunch.comment || '暂无备注' }}</p>
+                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">名称 / 备注</p>
+                      <p class="mt-1 text-sm leading-6 text-slate-700">{{ dayDetail.lunch.comment || '暂无备注' }}</p>
                     </div>
                     <div>
                       <button
                           @click="toggleSuggest('lunch')"
                           class="flex items-center justify-between w-full text-left"
                       >
-                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">健康建议</span>
-                        <span class="text-xs text-gray-400">{{ showSuggest.lunch ? '收起 ▲' : '展开 ▼' }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">健康建议</span>
+                        <span class="text-xs text-slate-400">{{ showSuggest.lunch ? '收起 ▲' : '展开 ▼' }}</span>
                       </button>
                       <div
                         v-show="showSuggest.lunch"
@@ -391,19 +391,19 @@ onMounted(async () => {
               </div>
 
               <!-- 晚餐模块：仅当 dinner 存在且包含核心字段（name/imageUrl 至少一个）时显示 -->
-              <div v-if="dayDetail.dinner && (dayDetail.dinner.name || dayDetail.dinner.imageUrl)" class="overflow-hidden rounded-3xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 shadow-sm">
-                <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+              <div v-if="dayDetail.dinner && (dayDetail.dinner.name || dayDetail.dinner.imageUrl)" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-5">
                   <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
                     <component :is="mealIcon('dinner')" :size="18" />
                   </div>
                   <div>
-                    <div class="text-sm font-semibold text-gray-500">{{ mealLabel('dinner') }}</div>
-                    <div class="text-base font-bold text-gray-900">{{ dayDetail.dinner.name || dayDetail.dinner.comment || '未命名餐品' }}</div>
+                    <div class="text-sm font-semibold text-slate-500">{{ mealLabel('dinner') }}</div>
+                    <div class="text-base font-bold text-slate-900">{{ dayDetail.dinner.name || dayDetail.dinner.comment || '未命名餐品' }}</div>
                   </div>
                 </div>
 
                 <div class="grid gap-4 p-4 sm:grid-cols-[180px_1fr] sm:p-5">
-                  <div class="overflow-hidden rounded-2xl bg-gray-100 shadow-sm">
+                  <div class="overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
                     <img
                         :src="`http://123.56.144.72:8080/image/${dayDetail.dinner.imageUrl}`"
                         :alt="`${mealLabel('dinner')}图片`"
@@ -413,16 +413,16 @@ onMounted(async () => {
 
                   <div class="space-y-3">
                     <div>
-                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">名称 / 备注</p>
-                      <p class="mt-1 text-sm leading-6 text-gray-700">{{ dayDetail.dinner.comment || '暂无备注' }}</p>
+                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">名称 / 备注</p>
+                      <p class="mt-1 text-sm leading-6 text-slate-700">{{ dayDetail.dinner.comment || '暂无备注' }}</p>
                     </div>
                     <div>
                       <button
                           @click="toggleSuggest('dinner')"
                           class="flex items-center justify-between w-full text-left"
                       >
-                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">健康建议</span>
-                        <span class="text-xs text-gray-400">{{ showSuggest.dinner ? '收起 ▲' : '展开 ▼' }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">健康建议</span>
+                        <span class="text-xs text-slate-400">{{ showSuggest.dinner ? '收起 ▲' : '展开 ▼' }}</span>
                       </button>
                       <div
                         v-show="showSuggest.dinner"
@@ -436,30 +436,30 @@ onMounted(async () => {
               </div>
 
               <!-- 零食模块：仅当 snack 数组有数据时显示 -->
-              <section v-if="dayDetail.snack && dayDetail.snack.length > 0" class="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+              <section v-if="dayDetail.snack && dayDetail.snack.length > 0" class="rounded-3xl border border-slate-200/80 bg-white/95 p-4 shadow-sm sm:p-5">
                 <div class="mb-3 flex items-center gap-2">
                   <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-600">
                     <UtensilsCrossed :size="18" />
                   </div>
                   <div>
-                    <h4 class="text-base font-bold text-gray-900">零食记录</h4>
-                    <p class="text-sm text-gray-500">记录餐间补给与加餐情况</p>
+                    <h4 class="text-base font-bold text-slate-900">零食记录</h4>
+                    <p class="text-sm text-slate-500">记录餐间补给与加餐情况</p>
                   </div>
                 </div>
 
                 <div class="space-y-3">
-                  <div v-for="(snack, index) in dayDetail.snack" :key="`${snack.snack_name}-${index}`" class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                  <div v-for="(snack, index) in dayDetail.snack" :key="`${snack.snack_name}-${index}`" class="rounded-2xl border border-slate-200/80 bg-slate-50 p-4">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                       <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
-                          <h5 class="truncate text-sm font-bold text-gray-900">{{ snack.snack_name }}</h5>
+                          <h5 class="truncate text-sm font-bold text-slate-900">{{ snack.snack_name }}</h5>
                           <span class="rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-700">{{ snackRoleLabel(snack.role) }}</span>
                         </div>
-                        <p class="mt-1 text-sm text-gray-600">{{ snack.remark || '暂无备注' }}</p>
+                        <p class="mt-1 text-sm text-slate-600">{{ snack.remark || '暂无备注' }}</p>
                       </div>
-                      <div class="rounded-2xl bg-white px-3 py-2 text-right shadow-sm">
-                        <p class="text-[11px] text-gray-400">数量</p>
-                        <p class="text-sm font-semibold text-gray-900">{{ snack.count }}</p>
+                      <div class="rounded-2xl bg-white px-3 py-2 text-right shadow-sm border border-slate-200/80">
+                        <p class="text-[11px] text-slate-400">数量</p>
+                        <p class="text-sm font-semibold text-slate-900">{{ snack.count }}</p>
                       </div>
                     </div>
                   </div>
@@ -467,12 +467,12 @@ onMounted(async () => {
               </section>
 
               <!-- 无任何有效记录时显示空状态 -->
-              <div v-if="!dayDetail.breakfast && !dayDetail.lunch && !dayDetail.dinner && (!dayDetail.snack || dayDetail.snack.length === 0)" class="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/60 px-6 py-10 text-center">
+              <div v-if="!dayDetail.breakfast && !dayDetail.lunch && !dayDetail.dinner && (!dayDetail.snack || dayDetail.snack.length === 0)" class="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/60 px-6 py-10 text-center app-surface">
                 <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white text-emerald-500 shadow-sm">
                   <CalendarDays :size="28" />
                 </div>
-                <h4 class="text-lg font-bold text-gray-900">今日无饮食记录</h4>
-                <p class="mt-2 max-w-md text-sm leading-6 text-gray-500">
+                <h4 class="text-lg font-bold text-slate-900">今日无饮食记录</h4>
+                <p class="mt-2 max-w-md text-sm leading-6 text-slate-500">
                   当前日期暂无早餐、午餐、晚餐或零食记录。你可以点击其他绿色日期查看已记录内容。
                 </p>
               </div>
@@ -485,36 +485,15 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.meal-modal-enter-active,
-.meal-modal-leave-active {
-  transition: opacity 0.22s ease;
-}
-
-.meal-modal-enter-from,
-.meal-modal-leave-to {
-  opacity: 0;
-}
-
-.meal-modal-enter-active section,
-.meal-modal-leave-active section {
-  transition: transform 0.22s ease, opacity 0.22s ease;
-}
-
-.meal-modal-enter-from section,
-.meal-modal-leave-to section {
-  transform: translateY(18px) scale(0.98);
-  opacity: 0;
-}
-
 .calendar-day {
   min-height: 3rem;
 }
-   /* 原有样式不变 */
 
-   /* Markdown 解析内容样式 */
- :deep(.markdown-content) {
-   line-height: 1.7;
- }
+/* Markdown 解析内容样式 */
+:deep(.markdown-content) {
+  line-height: 1.7;
+}
+
 :deep(.markdown-content p) {
   margin: 0.6em 0;
 }

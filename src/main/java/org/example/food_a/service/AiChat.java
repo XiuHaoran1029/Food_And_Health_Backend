@@ -19,8 +19,8 @@ import java.util.List;
 @Slf4j
 @Service
 public class AiChat {
-    private static final String API_TOKEN = "2f7cd717-8c63-414d-bb37-737880511646";
-    private static final String API_TOKEN_VL="2f7cd717-8c63-414d-bb37-737880511646";
+    private static final String API_TOKEN = "****";
+    private static final String API_TOKEN_VL="****";
     private static final String API_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
     private static final String API_URL_VL="https://ark.cn-beijing.volces.com/api/v3/chat/completions";
     private static final String DEFAULT_MODEL = "doubao-seed-2-0-mini-260215";
