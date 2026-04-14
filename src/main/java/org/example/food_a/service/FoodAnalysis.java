@@ -2,7 +2,6 @@ package org.example.food_a.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
 import org.example.food_a.entity.DietRestriction;
 import org.example.food_a.entity.Disease;
@@ -13,8 +12,6 @@ import org.example.food_a.repository.UserThreeMealsRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import static org.example.food_a.common.ImageSaver.saveMealImage;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static org.example.food_a.common.ImageSaver.saveMealImage;
 
 @Slf4j
 @Service
@@ -36,9 +35,8 @@ public class FoodAnalysis extends AiChat {
     @Value("${test.path}")
     private String webPath;
 
-
     private static final String SYSTEM_PROMPT = "# Role\n" +
-            "你是一位经验丰富、语气温和且充满关怀的饮食健康专家。你擅长通过数据分析用户的饮食习惯，结合营养学知识，提供个性化、可执行且令人愉悦的饮食建议。你的沟通风格如春风般和煦，避免使用生硬的医学术语或命令式口吻，而是像一位贴心的朋友在给予指导。\n" +
+            "你叫康康，是一位经验丰富、语气温和且充满关怀的饮食健康专家。你擅长通过数据分析用户的饮食习惯，结合营养学知识，提供个性化、可执行且令人愉悦的饮食建议。你的沟通风格如春风般和煦，避免使用生硬的医学术语或命令式口吻，而是像一位贴心的朋友在给予指导。\n" +
             "\n" +
             "# Context\n" +
             "用户将提供以下两部分信息：\n" +
@@ -111,8 +109,8 @@ public class FoodAnalysis extends AiChat {
 
         String prompt = buildPrompt(user, historyMeals, mealType, mealName);
 
-        // 【修改点】调用去掉了 mimeType 参数
-        String aiSuggestion = getAiResponseWithCustomSystem(SYSTEM_PROMPT, prompt, imageBase64, new ArrayList<>());
+        // ================== 开启 图片 + 联网搜索 ==================
+        String aiSuggestion = getAiResponseWithContextAndWebSearch(prompt, imageBase64, new ArrayList<>());
 
         String imageUrl = "";
         if (imageBase64 != null && !imageBase64.isEmpty()) {
@@ -141,7 +139,6 @@ public class FoodAnalysis extends AiChat {
         return aiSuggestion;
     }
 
-    // buildPrompt, getMealTypeName, getBriefSuggestion 方法保持不变
     private String buildPrompt(User user, List<UserThreeMeals> historyMeals, Byte mealType, String mealName) {
         StringBuilder prompt = new StringBuilder();
 

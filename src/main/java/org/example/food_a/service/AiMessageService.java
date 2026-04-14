@@ -95,12 +95,13 @@ public class AiMessageService {
         log.info("上下文长度为：{}", historyMessages.size());
         String aiContent="";
         String aiImage = (imgBase64 != null && imgBase64.startsWith("data:image")) ? imgBase64 : null;
-        if(Objects.equals(function_type, "normal")){
+        if(Objects.equals(function_type, "normal") || Objects.equals(function_type, "normal_web_search") || Objects.equals(function_type, "normal_search")){
             log.info("普通对话模式");
+            boolean enableWebSearch = Objects.equals(function_type, "normal_web_search") || Objects.equals(function_type, "normal_search");
             if(imgBase64 == null || imgBase64.isEmpty()){
-                aiContent = aiChat.getAiResponseWithContext(content, historyMessages);
+                aiContent = aiChat.getAiResponseWithContextAndWebSearch(content, historyMessages);
             }else {
-                aiContent = aiChat.getAiResponseWithContext(content, aiImage, historyMessages);
+                aiContent = aiChat.getAiResponseWithContextAndWebSearch(content, aiImage, historyMessages);
             }
         }else if(Objects.equals(function_type, "food_analysis")){
             log.info("食物分析模式");
@@ -111,6 +112,9 @@ public class AiMessageService {
         }else if(Objects.equals(function_type, "report_analysis")){
             log.info("报告分析模式");
             aiContent = reportAnalysis.analyzeReport(aiImage);
+        } else {
+            log.warn("未知功能类型: {}，回退普通对话", function_type);
+            aiContent = aiChat.getAiResponseWithContext(content, historyMessages);
         }
 
 

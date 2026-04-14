@@ -1,210 +1,152 @@
-# 时康日记 前端
+# 时康日记项目介绍
 
-> 基于 Vue 3 + Vite + Capacitor 构建的健康管理前端，面向 Web 与 Android 双端使用，支持 AI 对话、三餐分析、零食分析、用药提醒、饮食日历和个人信息管理。
+时康日记是一个前后端分离的健康管理应用，面向 Web 和 Android（Capacitor 容器）双端。项目以饮食与用药场景为核心，结合 AI 对话、三餐分析、零食分析、体检报告分析等能力，提供移动优先的一体化健康管理体验。
 
-![界面预览](e0b8a101b400a83bff935186abcdc7c3.jpg))
+## 1. 项目定位
 
-## 项目简介
+- 核心目标：把“记录 + 分析 +提醒”串成一个完整链路，而不是单一聊天或单一打卡工具。
+- 主要用户：有饮食管理、规律用药、健康复盘需求的普通用户。
+- 交互特征：优先适配手机端，针对 Android WebView 做了触摸与滚动优化。
 
-这个项目是一个围绕“食物健康管理”场景打造的前端应用。它并不只是一个聊天界面，而是把健康对话、饮食记录、零食分析、用药计划和个人设置整合到同一套移动优先的界面中。
+## 2. 已实现功能
 
+### 2.1 AI 多轮会话
 
-## 功能特性
+- 支持创建、删除、分页查询会话。
+- 支持按会话加载历史消息，并在前端进行流式展示体验。
+- 后端根据 `function_type` 区分普通问答、三餐分析、零食分析、报告分析。
 
-- **AI 对话**：支持多轮会话、会话创建/删除、消息历史加载
-- **三餐分析**：拍照上传早餐 / 午餐 / 晚餐图片并发起 AI 分析
-- **零食分析**：记录饮品或袋装零食，提交数量与备注进行分析
-- **用药提醒**：创建用药计划，并可同步到系统日历（Android）
-- **三餐日历**：按月查看饮食记录，点击日期查看当天详情
-- **个人设置**：修改用户名、疾病信息、忌口、头像与密码
-- **移动端适配**：针对手机与 Android WebView 做了交互优化
-- **Token 登录态**：登录后保存 token，接口自动携带认证头
+### 2.2 三餐智能分析
 
-## 技术栈
+- 前端支持拍照或相册选图、图片压缩后上传。
+- 后端结合用户近三天饮食记录、疾病与忌口信息，生成下一餐建议。
+- 分析结果与餐次记录持久化，供日历模块复盘展示。
 
-- **Vue 3**：前端框架
-- **Vite**：开发与构建工具
-- **Vue Router**：路由管理
-- **Pinia**：状态管理
-- **Axios**：HTTP 请求封装
-- **Capacitor**：Android 原生容器能力
-- **Vant**：移动端 UI 提示/交互
-- **Tailwind CSS**：样式系统
-- **lucide-vue-next**：图标库
-- **markdown-it**：聊天与日历中的 Markdown 渲染
+### 2.3 零食智能分析
 
-## 项目结构
+- 记录零食名称、类型（饮品/袋装零食）、数量、备注。
+- 后端可结合营养库数据（若命中）+ 最近 24 小时零食记录给出建议。
+- 结果会保存到零食记录表，供日历详情页展示。
+f
+### 2.4 用药提醒
+
+- 支持录入药名、每日次数、单次剂量、截止日期。
+- 数据写入后端后，前端在 Android 端尝试同步系统日历（需权限）。
+- 当系统权限或插件调用失败时，页面仍可保存业务数据并给出提示。
+
+### 2.5 饮食日历追溯
+
+- 月视图展示有记录日期。
+- 点击日期可查看早餐/午餐/晚餐 + 零食明细。
+- 建议内容支持 Markdown 渲染，便于移动端阅读。
+
+### 2.6 体检报告分析
+
+- 通过相机/相册获取报告图片后上传。
+- 调用视觉模型进行文本化解读，并回写到会话消息流中。
+
+### 2.7 个人信息与账号设置
+
+- 支持用户名、疾病、忌口、头像修改。
+- 支持密码修改与退出登录。
+
+### 2.8 登录态与基础安全处理
+
+- 前端使用本地存储保存 token，并在请求拦截器中自动携带 `Authorization`。
+- 登录/注册密码经过前端 `SM3` 后再做 `RSA` 加密传输；后端做 RSA 解密后校验。
+
+## 3. 技术架构
+
+### 3.1 前端
+
+- 框架：Vue 3 + Vite 7
+- 状态管理：Pinia
+- 路由：Vue Router
+- 网络层：Axios（含请求/响应拦截器）
+- UI 与样式：Vant + Tailwind CSS + lucide-vue-next
+- 跨端能力：Capacitor（Camera、Calendar 等插件）
+- 内容渲染：markdown-it
+
+### 3.2 后端
+
+- 框架：Spring Boot（Web、Validation、JPA、Security、Actuator）
+- 数据库：MySQL（JPA Repository）
+- AI 调用：Java HttpClient 对接火山引擎 Ark 接口（文本与视觉）
+- 日志：SLF4J + Logback
+
+### 3.3 业务分层
+
+- Controller：接口入参、响应封装
+- Service：核心业务（会话、消息、三餐、零食、用药、用户）
+- Repository：数据库访问
+- Entity/DTO：领域模型与请求响应对象
+
+## 4. 项目结构
+
+### 4.1 前端（`frontend/src`）
 
 ```text
 src/
-├── api/                 # 接口封装（auth / conversation / message / meal / medicine）
-├── components/          # 页面级与业务组件
-├── router/              # 路由配置与登录拦截
-├── store/               # Pinia 状态（user / sidebar）
-├── styles/              # Android WebView 等额外样式
-├── utils/               # 图片处理、消息标准化、加密、报告分析等工具
-├── views/               # 页面视图（Home）
-├── App.vue              # 根组件
-└── main.js              # 入口文件
+├── api/         # 接口封装：auth/conversation/message/meal/medicine
+├── components/  # 业务组件：聊天区、三餐、零食、用药、设置等
+├── router/      # 路由与登录拦截
+├── store/       # Pinia 状态（用户、侧边栏）
+├── styles/      # Android WebView 适配样式
+├── utils/       # 加密、图片处理、消息标准化、报告分析工具
+├── views/       # 页面视图（Home）
+└── main.js      # 入口初始化
 ```
 
-## 主要页面与路由
+### 4.2 后端（`src/main/java/org/example/food_a`）
 
-| 路由 | 页面 | 说明 |
-| --- | --- | --- |
-| `/` | `Home` | 主聊天页，左侧会话列表 + 右侧消息区 |
-| `/login` | `Login` | 登录 / 注册 |
-| `/food-record` | `FoodRecord` | 三餐分析 |
-| `/snack-analysis` | `SnackAnalysis` | 零食分析 |
-| `/medication-reminder` | `MedicationReminder` | 用药计划与日历提醒 |
-| `/meal-calendar` | `MealCalendar` | 三餐记录日历 |
-| `/settings` | `Settings` | 个人设置 |
+```text
+├── controller/  # 认证、会话、消息、三餐、用药接口
+├── service/     # 业务实现与 AI 调用
+├── repository/  # JPA 数据访问层
+├── entity/      # 实体对象
+├── dto/         # 请求/响应 DTO
+└── common/      # 通用能力：返回体、配置、Token、RSA 解密等
+```
 
-## 运行要求
+## 5.使用说明
 
-- Node.js：`^20.19.0 || >=22.12.0`
-- npm：建议使用随 Node 安装的版本
-- 后端服务：需要能访问 `API文档.md` 中定义的接口
+### 5.1
 
-## 本地开发
+使用模拟器或安卓手机运行resources目录下的`时康日记_v1.0_1_release.apk`，进行安装并体验。
 
-### 1）安装依赖
+## 6. 部署说明
+
+### 6.1 后端
 
 ```bash
+./mvnw spring-boot:run
+```
+
+Windows 可使用：
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+### 6.2 前端（Web）
+
+```bash
+cd FoodAndHealth-master
 npm install
-```
-
-### 2）配置环境变量
-
-建议在项目根目录创建：
-
-- `.env.development`
-- `.env.production`
-
-推荐内容如下：
-
-```dotenv
-VITE_WEB_API_BASE_URL=/
-VITE_NATIVE_API_BASE_URL=http://***:8080
-VITE_API_PROXY_TARGET=http://***:8080
-```
-
-说明：
-
-- Web 端默认使用 `VITE_WEB_API_BASE_URL`，通常为 `/`
-- Android / Capacitor 端优先使用 `VITE_NATIVE_API_BASE_URL`
-- Vite 本地开发代理目标由 `VITE_API_PROXY_TARGET` 控制
-
-### 3）启动开发服务
-
-```bash
 npm run dev
 ```
 
-### 4）打包预览
+### 6.3 Android（Capacitor）
 
-```bash
-npm run build
-npm run preview
-```
+- 在前端完成构建后，同步到 Android 工程。
+- 通过 Android Studio 打开 `FoodAndHealth-master/android` 进行真机调试与打包。
 
-## Android / Capacitor 构建
+## 7. 应用价值
 
-1. 先执行前端构建：
+时康日记将 AI 分析能力与日常健康行为管理打通：
 
-```bash
-npm run build
-```
+- 对用户：降低健康记录成本，提高饮食与用药管理连续性。
+- 对产品：具备清晰模块边界，便于逐步扩展慢病管理、家庭健康档案等能力。
+- 对工程：前后端结构明确，适合团队协作和后续维护交接。
 
-2. 同步 Capacitor 资源：
 
-```bash
-npx cap sync android
-```
-
-3. 打开 Android 工程：
-
-```bash
-npx cap open android
-```
-
-或直接运行：
-
-```bash
-npx cap run android
-```
-
-> 提示：`capacitor.config.json` 已开启 `cleartext`，并允许原生容器内访问外部后端地址，适合当前 HTTP 后端环境。
-
-## 登录与鉴权说明
-
-- 登录 / 注册接口使用邮箱 + 密码
-- 前端在提交前会对密码做加密处理（`src/utils/encrypt.js`）
-- 登录成功后，token 会保存到 `localStorage`
-- `src/api/http.js` 会自动为除登录 / 注册外的请求添加 `Authorization: Bearer <token>`
-- 如果接口返回 `401`，前端会自动清除 token 并跳回登录页
-
-## 接口概览
-
-### 认证接口
-
-- `POST /api/auth/login`
-- `POST /api/auth/register`
-- `GET /api/auth/info`
-- `POST /api/auth/setting`
-- `POST /api/auth/setting/change`
-
-### 会话与消息
-
-- `POST /api/ai/conversation/create`
-- `GET /api/ai/conversation/list`
-- `DELETE /api/ai/conversation/delete`
-- `POST /api/ai/message/send`
-- `GET /api/ai/message/list`
-
-### 三餐日历
-
-- `GET /api/meal/month`
-- `GET /api/meal/day`
-
-### 用药记录
-
-- `POST /api/medicine/send`
-
-更多字段说明和返回结构，请参考 `API文档.md`。
-
-## 重要实现细节
-
-- `Home.vue` 会根据屏幕宽度自动决定侧边栏展开状态
-- Android WebView 下对双击缩放、滚动和触摸交互做了额外处理
-- `src/utils/messageNormalization.js` 用于兼容不同消息返回结构
-- `src/utils/helper.js` 负责图片压缩、Base64 转换
-- `src/utils/reportAnalysis.js` 已预留“报告分析”流程，可复用到后续功能入口
-
-## 常见问题
-
-### 1. 进入页面后又跳回登录页
-
-通常是 token 失效、格式不正确，或后端返回了 `401`。请检查 `localStorage` 中的 token 和后端登录状态。
-
-### 2. Web 端接口请求失败
-
-确认本地开发时是否正确设置了 `VITE_API_PROXY_TARGET`，并且后端服务可访问。
-
-### 3. Android 端请求打到了 `localhost`
-
-请检查 `.env.production` 中的 `VITE_NATIVE_API_BASE_URL`，原生端不要留空。
-
-### 4. 图片上传失败
-
-请确认后端支持 Base64 图片接收，并检查图片大小是否过大。
-
-## 参考文档
-
-- `API文档.md`：完整接口说明
-- `capacitor.config.json`：Capacitor 配置
-- `vite.config.js`：Vite 开发代理配置
-
-## 许可证
-
-未单独声明许可证时，请按项目实际情况使用。

@@ -92,29 +92,31 @@ public class SnackAnalysis extends AiChat{
         List<UserSnackRecord> recentSnacks =
                 userSnackRecordRepository.findByUserIdAndCreateTimeAfter(userId, oneDayAgo);
 
-        // 查询零食营养信息
-        Optional<SnackNutrition> snackNutrition =
-                snackNutritionRepository.findBySnackName(snackName);
+        // 模糊查询零食营养信息（返回所有匹配结果）
+        List<SnackNutrition> snackNutritionList =
+                snackNutritionRepository.findBySnackNameContaining(snackName);
 
-        // 构建AI提示词
-        String prompt = buildPrompt(user, recentSnacks, snackName, countValue, remark, snackNutrition.orElse(null));
+// 取第一个结果（没有则为 null）
+        SnackNutrition snackNutrition = snackNutritionList.stream().findFirst().orElse(null);
 
+// 构建AI提示词
+        String prompt = buildPrompt(user, recentSnacks, snackName, countValue, remark, snackNutrition);
         // 获取AI返回结果
         String aiSuggestion;
         try {
-            aiSuggestion = getAiResponseWithCustomSystem(SYSTEM_PROMPT, prompt, null, new ArrayList<>());
+            aiSuggestion =getAiResponseWithContextAndWebSearch(prompt, null, new ArrayList<>());
         } catch (Exception e) {
             log.error("AI分析暂时不可用：{}", e.getMessage());
             aiSuggestion = "AI分析暂时不可用：" + e.getMessage();
         }
-
-        // ======================= 核心修改：名称和备注分开存储 =======================
+// ======================= 核心修改：名称和备注分开存储 =======================
         UserSnackRecord record = UserSnackRecord.builder()
                 .userId(userId)
                 .role(roleValue)
                 .snackName(snackName)       // 零食真实名称（单独存）
                 .remark(remark)             // 用户备注（单独存）
-                .snackId(snackNutrition.map(SnackNutrition::getId).map(Long::valueOf).orElse(null))
+                // 👇 这里同步改成从第一条结果里取 ID
+                .snackId(snackNutrition != null ? Long.valueOf(snackNutrition.getId()) : null)
                 .count(countValue)
                 .build();
 

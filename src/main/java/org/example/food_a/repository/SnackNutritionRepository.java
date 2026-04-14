@@ -43,4 +43,6 @@ public interface SnackNutritionRepository extends JpaRepository<SnackNutrition, 
      */
     @Query("SELECT s FROM SnackNutrition s WHERE s.energy > :minEnergy")
     List<SnackNutrition> findHighEnergySnacks(@Param("minEnergy") double minEnergy);
+
+    List<SnackNutrition> findBySnackNameContaining(String snackName);
 }
